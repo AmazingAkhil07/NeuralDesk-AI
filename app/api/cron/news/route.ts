@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     if (user) {
       userIds = [user.id];
     } else {
-      const { data: profiles } = await supabase.from('profiles').select('id');
+      const { data: profiles } = await supabase.from('profiles').select('id') as { data: { id: string }[] | null };
       if (!profiles || profiles.length === 0) return NextResponse.json({ success: true, processed: 0 });
       userIds = profiles.map(p => p.id);
     }

@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       console.log(`✅ Session found: Updating models for user ${user.id}`);
     } else {
       console.log('No active session. Fetching all system profiles for update...');
-      const { data: profiles } = await supabase.from('profiles').select('id');
+      const { data: profiles } = await supabase.from('profiles').select('id') as { data: { id: string }[] | null };
       if (!profiles || profiles.length === 0) {
         return NextResponse.json({ success: true, message: 'No profiles to update', stats: { totalFetched: latestModels.length, newModels: 0, updatedModels: 0, deletedOutdated: 0 } });
       }
