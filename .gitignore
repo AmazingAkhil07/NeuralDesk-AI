@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# Explicit local env files
+.env.local
+.env.local.*
 
 # Google OAuth credentials (NEVER commit these!)
 client_secret*.json

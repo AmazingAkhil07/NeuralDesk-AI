@@ -1,5 +1,6 @@
 import axios from 'axios'
 import * as cheerio from 'cheerio'
+import { extractiveSummaryFromUrl, isLLMUp, markLLMDown } from './aiService'
 
 export interface NewsItem {
   title: string
@@ -21,28 +22,70 @@ async function generateSummary(title: string, url: string): Promise<string | und
       return undefined
     }
 
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        contents: [{
-          parts: [{
-            text: `Summarize this AI/ML news article in 2-3 concise sentences. Focus on the key innovation or finding. Title: ${title}\\nURL: ${url}`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 150,
-        }
-      },
-      {
-        timeout: 5000 // 5 second timeout
-      }
-    )
+    // If LLMs are currently disabled (circuit breaker), skip to extractive fallback
+    if (!isLLMUp()) {
+      console.warn('Skipping Gemini calls because LLMs are temporarily disabled; using extractive fallback')
+      return await extractiveSummaryFromUrl(url) ?? undefined
+    }
 
-    const summary = response.data?.candidates?.[0]?.content?.parts?.[0]?.text
-    return summary?.trim()
+    // Retry with exponential backoff on 429
+    let response: any = undefined
+    const maxRetries = 2
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        response = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+          {
+            contents: [{
+              parts: [{
+                text: `Summarize this AI/ML news article in 2-3 concise sentences. Focus on the key innovation or finding. Title: ${title}\nURL: ${url}`
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 150,
+            }
+          },
+          {
+            timeout: 10000 // 10 second timeout
+          }
+        )
+        break
+      } catch (err: any) {
+        const status = err?.response?.status
+        console.warn('Gemini generate attempt failed:', status || err?.code || err?.message)
+        if (status === 429) {
+          if (attempt < maxRetries) {
+            const backoff = Math.pow(2, attempt + 1) * 1000
+            console.warn(`Rate limited by Gemini, retrying in ${backoff}ms (attempt ${attempt + 1})`)
+            await new Promise((r) => setTimeout(r, backoff))
+            continue
+          } else {
+            // Out of retries - mark LLMs down briefly and fall back
+            console.warn('Gemini returning 429 repeatedly; marking LLMs down and falling back to extractive')
+            markLLMDown(5 * 60 * 1000)
+            response = undefined
+            break
+          }
+        }
+        // non-rate-limit error: rethrow so outer catch will handle fallback
+        throw err
+      }
+    }
+
+    const summary = response?.data?.candidates?.[0]?.content?.parts?.[0]?.text
+    if (summary) return summary?.trim()
   } catch (error) {
     console.error('Error generating summary:', error)
+
+    // Try centralized extractive fallback (handles 403s and proxies)
+    try {
+      const fallback = await extractiveSummaryFromUrl(url)
+      if (fallback) return fallback
+    } catch (e) {
+      console.error('Extractive fallback failed:', e)
+    }
+
     return undefined
   }
 }
@@ -459,22 +502,26 @@ export async function aggregateAllNews(): Promise<NewsItem[]> {
   // Sort by publish date (newest first)
   uniqueNews.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 
-  // Generate summaries for top 10 news using Gemini (in parallel, with limit)
-  console.log('Generating AI summaries with Gemini...')
+  // Generate summaries for top 10 news using Gemini with a small concurrency limit
+  console.log('Generating AI summaries with Gemini (concurrency=3)...')
   const topNews = uniqueNews.slice(0, 10)
-  
-  await Promise.allSettled(
-    topNews.map(async (item) => {
-      if (!item.summary) {
-        const summary = await generateSummary(item.title, item.url)
-        if (summary) {
-          item.summary = summary
-        }
-      }
-    })
-  )
 
-  console.log(`Generated summaries for ${topNews.filter(n => n.summary).length} articles`)
+  const concurrency = 3
+  for (let i = 0; i < topNews.length; i += concurrency) {
+    const batch = topNews.slice(i, i + concurrency)
+    await Promise.all(
+      batch.map(async (item) => {
+        if (!item.summary) {
+          const summary = await generateSummary(item.title, item.url)
+          if (summary) item.summary = summary
+        }
+      })
+    )
+    // small pause between batches
+    if (i + concurrency < topNews.length) await new Promise((r) => setTimeout(r, 500))
+  }
+
+  console.log(`Generated summaries for ${topNews.filter((n) => n.summary).length} articles`)
 
   return uniqueNews
 }
