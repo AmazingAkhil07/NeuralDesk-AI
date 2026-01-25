@@ -18,6 +18,8 @@ All code for the AI Models Tracker has been successfully implemented. The featur
 ### API Routes
 - ✅ `app/api/models/route.ts` - GET (list/search) and POST (create) endpoints
 - ✅ `app/api/models/[id]/route.ts` - GET (single), PATCH (update), DELETE endpoints
+- ✅ `app/api/cron/update-models/route.ts` - **NEW: Auto-Discovery Sync Engine**
+- ✅ `lib/services/modelsFetcher.ts` - **NEW: Multi-Provider Intelligence Layer** (OpenAI, Google, Grok, etc.)
 
 ### UI Components
 - ✅ `components/models/ModelCard.tsx` - Card component to display individual models
@@ -38,17 +40,15 @@ All code for the AI Models Tracker has been successfully implemented. The featur
 
 ## 🎯 Features Implemented
 
-### 1. Database Schema
+### 1. Database Schema & Intelligence
 - Comprehensive models table with all PRD-specified fields:
   - Basic info: name, company, model_type, model_id
   - Technical: context_length, is_open_source, capabilities
   - Content: description, strengths, weaknesses
-  - Metadata: pricing, last_model_update, personal_rating, notes
+  - Metadata: pricing (Input/Output), last_model_update, personal_rating, notes
   - Links: url, documentation_url
-  - Timestamps: created_at, updated_at
-- Proper indexing for performance (user_id, company, model_type)
-- Row Level Security policies for data protection
-- Automatic timestamp updates via triggers
+- **Market Intelligence Engine**: Built-in pricing logic for 30+ frontier models.
+- **Smart Protection**: Logic to prevent automated syncs from overwriting user-entered ratings and notes.
 
 ### 2. CRUD API Endpoints
 All authenticated with Supabase Auth:
@@ -81,54 +81,17 @@ All authenticated with Supabase Auth:
 - Delete model with confirmation
 - Validates ownership
 
-### 3. UI Components
-
+### 3. UI Components & Intelligence
 **ModelCard**
-- Beautiful card design with gradient badges
-- Displays all model information:
-  - Name, company, type badge
-  - Context length (formatted: 1M, 128K, etc.)
-  - Open source badge
-  - Personal rating with stars
-  - Description (truncated)
-  - Strengths (green highlight)
-  - Weaknesses (red highlight)
-  - Capabilities as tags
-  - Website and documentation links
-  - Last update date
-- Edit and delete buttons
-- Hover effects and smooth transitions
-- Responsive design
-
-**ModelForm**
-- Comprehensive dialog form
-- All fields from schema:
-  - Required: name, company, model_type
-  - Optional: all other fields
-- Field validations:
-  - Personal rating: 1-10
-  - Context length: positive integer
-  - URLs: proper format
-  - Date picker for last_model_update
-- Capabilities as comma-separated input
-- Open source toggle switch
-- Supports both create and edit modes
-- Loading states during submission
+- Beautiful glassmorphism design with high-contrast badges
+- One-click **Sync Models** integration for real-time market updates
+- Smart context formatting (e.g., 2M tokens, 128K tokens)
+- Automated pricing display (Input vs Output Costs)
 
 **ModelsPage**
-- Grid layout (responsive: 1/2/3 columns)
-- Comprehensive filter panel:
-  - Search bar with icon
-  - Company dropdown (dynamic from data)
-  - Model type dropdown
-  - Open source toggle button
-- Real-time filtering (debounced search)
-- Loading state with spinner
-- Empty states:
-  - No models added yet
-  - No results matching filters
-- Add model button (prominent in header)
-- Smooth animations and transitions
+- Real-time **Auto-Discovery**: Fetches latest models from OpenAI, Google, and Anthropic APIs
+- **Frontier Grouping**: Identifies and prioritizes newest version tiers (Opus, Sonnet, Ultra)
+- Global Market Intelligence: Internal map of industry standard pricing and specs
 
 ### 4. User Experience
 - Toast notifications for all actions:
@@ -144,39 +107,12 @@ All authenticated with Supabase Auth:
 ### 5. Data & Seed
 Pre-populated seed data includes:
 
-**OpenAI Models**
-- GPT-4 Turbo (128K context, multimodal)
-- GPT-4o (128K context, faster)
-- GPT-3.5 Turbo (16K context)
-
-**Anthropic Models**
-- Claude 3.5 Sonnet (200K context) - Rating: 10/10
-- Claude 3 Opus (200K context)
-- Claude 3 Haiku (200K context, fast)
-
-**Google Models**
-- Gemini 2.0 Flash (1M context!)
-- Gemini 1.5 Pro (2M context!)
-- Gemini 1.5 Flash (1M context, fast)
-
-**Meta (Open Source)**
-- Llama 3.3 70B
-- Llama 3.1 405B (largest open model)
-- Llama 3.2 Vision (multimodal)
-
-**Others**
-- Mistral Large 2, Mistral Nemo
-- DeepSeek-V2.5 (excellent for code)
-- Command R+ (Cohere - RAG optimized)
-- Grok-2 (xAI - real-time data)
-
-Each model includes:
-- Real context lengths
-- Actual strengths and weaknesses
-- Capabilities arrays
-- Links to documentation
-- Personal ratings
-- Last update dates
+**The Hardware Era (Latest Additions)**
+- **Grok-3 (xAI)**: Real-time X integration and multimodal reasoning
+- **DeepSeek-V3**: State-of-the-art open weights with R1 reasoning
+- **GPT-5 / o3 Series**: Prepared for upcoming frontier OpenAI releases
+- **Claude 4.5 Tier**: Full architecture and pricing support for latest Anthropic releases
+- **Gemini 3 Ultra**: 2M context window support with native tool use
 
 ---
 

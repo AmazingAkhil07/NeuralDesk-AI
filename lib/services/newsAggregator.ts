@@ -12,71 +12,81 @@ export interface NewsItem {
 }
 
 /**
- * Generate AI summary using Gemini API
+ * Generate AI summary using Groq API (FREE and FAST)
  */
 async function generateSummary(title: string, url: string): Promise<string | undefined> {
   try {
-    const apiKey = process.env.GOOGLE_AI_API_KEY
-    
-    if (!apiKey || apiKey === 'your_google_ai_api_key_here') {
+    const apiKey = process.env.GROQ_API_KEY
+
+    if (!apiKey || apiKey === 'your_groq_api_key_here') {
+      console.warn('Groq API key not found, skipping AI summary')
       return undefined
     }
 
     // If LLMs are currently disabled (circuit breaker), skip to extractive fallback
     if (!isLLMUp()) {
-      console.warn('Skipping Gemini calls because LLMs are temporarily disabled; using extractive fallback')
+      console.warn('Skipping Groq calls because LLMs are temporarily disabled; using extractive fallback')
       return await extractiveSummaryFromUrl(url) ?? undefined
     }
 
-    // Retry with exponential backoff on 429
-    let response: any = undefined
+    // Retry with exponential backoff on rate limits
+    let responseData: any = undefined
     const maxRetries = 2
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        response = await axios.post(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-          {
-            contents: [{
-              parts: [{
-                text: `Summarize this AI/ML news article in 2-3 concise sentences. Focus on the key innovation or finding. Title: ${title}\nURL: ${url}`
-              }]
-            }],
-            generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 150,
-            }
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
           },
-          {
-            timeout: 10000 // 10 second timeout
+          body: JSON.stringify({
+            model: 'llama-3.1-8b-instant', // Fast and FREE
+            messages: [{
+              role: 'user',
+              content: `Summarize this AI/ML news article in 2-3 concise sentences. Focus on the key innovation or finding. Title: ${title}\nURL: ${url}`
+            }],
+            temperature: 0.3,
+            max_tokens: 150,
+          }),
+        })
+
+        if (!response.ok) {
+          const status = response.status
+          console.warn('Groq API attempt failed:', status)
+
+          if (status === 429) {
+            if (attempt < maxRetries) {
+              const backoff = Math.pow(2, attempt + 1) * 1000
+              console.warn(`Rate limited by Groq, retrying in ${backoff}ms (attempt ${attempt + 1})`)
+              await new Promise((r) => setTimeout(r, backoff))
+              continue
+            } else {
+              // Out of retries - mark LLMs down briefly and fall back
+              console.warn('Groq returning 429 repeatedly; marking LLMs down and falling back to extractive')
+              markLLMDown(5 * 60 * 1000)
+              break
+            }
           }
-        )
+
+          // Non-rate-limit error
+          throw new Error(`Groq API error: ${status}`)
+        }
+
+        responseData = await response.json()
         break
       } catch (err: any) {
-        const status = err?.response?.status
-        console.warn('Gemini generate attempt failed:', status || err?.code || err?.message)
-        if (status === 429) {
-          if (attempt < maxRetries) {
-            const backoff = Math.pow(2, attempt + 1) * 1000
-            console.warn(`Rate limited by Gemini, retrying in ${backoff}ms (attempt ${attempt + 1})`)
-            await new Promise((r) => setTimeout(r, backoff))
-            continue
-          } else {
-            // Out of retries - mark LLMs down briefly and fall back
-            console.warn('Gemini returning 429 repeatedly; marking LLMs down and falling back to extractive')
-            markLLMDown(5 * 60 * 1000)
-            response = undefined
-            break
-          }
+        console.warn('Groq generate attempt failed:', err?.message)
+        if (attempt >= maxRetries) {
+          throw err
         }
-        // non-rate-limit error: rethrow so outer catch will handle fallback
-        throw err
       }
     }
 
-    const summary = response?.data?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (summary) return summary?.trim()
+    const summary = responseData?.choices?.[0]?.message?.content
+    if (summary) return summary.trim()
   } catch (error) {
-    console.error('Error generating summary:', error)
+    console.error('Error generating summary with Groq:', error)
 
     // Try centralized extractive fallback (handles 403s and proxies)
     try {
@@ -103,14 +113,16 @@ export async function fetchRedditNews(): Promise<NewsItem[]> {
           headers: {
             'User-Agent': 'NeuralDesk/1.0.0',
           },
+          timeout: 10000,
         }
       )
 
       const posts = response.data.data.children
+      console.log(`✅ Fetched ${posts.length} posts from r/${subreddit}`)
       for (const post of posts) {
         const data = post.data
         // Filter out stickied posts and low-quality content
-        if (!data.stickied && data.score > 50) {
+        if (!data.stickied && data.score > 20) { // Lowered score threshold for more news
           newsItems.push({
             title: data.title,
             url: data.url.startsWith('http') ? data.url : `https://reddit.com${data.permalink}`,
@@ -120,8 +132,8 @@ export async function fetchRedditNews(): Promise<NewsItem[]> {
           })
         }
       }
-    } catch (error) {
-      console.error(`Error fetching from r/${subreddit}:`, error)
+    } catch (error: any) {
+      console.error(`Error fetching from r/${subreddit}:`, error.message)
     }
   }
 
@@ -131,22 +143,23 @@ export async function fetchRedditNews(): Promise<NewsItem[]> {
 // arXiv API - fetch recent ML papers
 export async function fetchArXivNews(): Promise<NewsItem[]> {
   const newsItems: NewsItem[] = []
-  
+
   try {
     const query = 'cat:cs.AI OR cat:cs.LG OR cat:cs.CL'
     const response = await axios.get(
-      `http://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&start=0&max_results=10&sortBy=lastUpdatedDate&sortOrder=descending`
+      `http://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&start=0&max_results=10&sortBy=lastUpdatedDate&sortOrder=descending`,
+      { timeout: 10000 }
     )
 
     const $ = cheerio.load(response.data, { xmlMode: true })
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $('entry').each((_: any, entry: any) => {
       const $entry = $(entry)
       const title = $entry.find('title').text().trim().replace(/\s+/g, ' ')
       const id = $entry.find('id').text().trim()
       const published = $entry.find('published').text().trim()
-      
+
       newsItems.push({
         title,
         url: id,
@@ -155,8 +168,9 @@ export async function fetchArXivNews(): Promise<NewsItem[]> {
         tags: ['arxiv', 'research', 'paper'],
       })
     })
-  } catch (error) {
-    console.error('Error fetching from arXiv:', error)
+    console.log(`✅ Fetched ${newsItems.length} papers from arXiv`)
+  } catch (error: any) {
+    console.error('Error fetching from arXiv:', error.message)
   }
 
   return newsItems
@@ -165,23 +179,24 @@ export async function fetchArXivNews(): Promise<NewsItem[]> {
 // RSS Feed Parser - generic RSS parser for blogs
 async function parseRSSFeed(url: string, sourceName: string, tags: string[]): Promise<NewsItem[]> {
   const newsItems: NewsItem[] = []
-  
+
   try {
     const response = await axios.get(url, {
       headers: {
         'User-Agent': 'NeuralDesk/1.0.0',
       },
+      timeout: 10000,
     })
 
     const $ = cheerio.load(response.data, { xmlMode: true })
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $('item').each((_: any, item: any) => {
       const $item = $(item)
       const title = $item.find('title').text().trim()
       const link = $item.find('link').text().trim()
       const pubDate = $item.find('pubDate').text().trim()
-      
+
       if (title && link) {
         newsItems.push({
           title,
@@ -192,8 +207,9 @@ async function parseRSSFeed(url: string, sourceName: string, tags: string[]): Pr
         })
       }
     })
-  } catch (error) {
-    console.error(`Error parsing RSS feed from ${sourceName}:`, error)
+    console.log(`✅ Fetched ${newsItems.length} items from ${sourceName}`)
+  } catch (error: any) {
+    console.error(`Error parsing RSS feed from ${sourceName}:`, error.message)
   }
 
   return newsItems
@@ -256,7 +272,7 @@ export async function fetchMistralAIBlog(): Promise<NewsItem[]> {
 // Stability AI Blog
 export async function fetchStabilityAIBlog(): Promise<NewsItem[]> {
   const newsItems: NewsItem[] = []
-  
+
   try {
     const response = await axios.get('https://stability.ai/news', {
       headers: {
@@ -265,14 +281,14 @@ export async function fetchStabilityAIBlog(): Promise<NewsItem[]> {
     })
 
     const $ = cheerio.load(response.data)
-    
+
     // Parse news articles from Stability AI
     $('article').slice(0, 10).each((_: any, article: any) => {
       const $article = $(article)
       const title = $article.find('h2, h3').first().text().trim()
       const link = $article.find('a').first().attr('href')
       const date = $article.find('time').attr('datetime') || new Date().toISOString()
-      
+
       if (title && link) {
         newsItems.push({
           title,
@@ -302,7 +318,7 @@ export async function fetchCohereAIBlog(): Promise<NewsItem[]> {
 // Perplexity AI Blog
 export async function fetchPerplexityAIBlog(): Promise<NewsItem[]> {
   const newsItems: NewsItem[] = []
-  
+
   try {
     const response = await axios.get('https://blog.perplexity.ai/', {
       headers: {
@@ -311,13 +327,13 @@ export async function fetchPerplexityAIBlog(): Promise<NewsItem[]> {
     })
 
     const $ = cheerio.load(response.data)
-    
+
     // Parse blog posts
     $('article').slice(0, 10).each((_: any, article: any) => {
       const $article = $(article)
       const title = $article.find('h2, h3').first().text().trim()
       const link = $article.find('a').first().attr('href')
-      
+
       if (title && link) {
         newsItems.push({
           title,
@@ -333,6 +349,33 @@ export async function fetchPerplexityAIBlog(): Promise<NewsItem[]> {
   }
 
   return newsItems
+}
+
+// VentureBeat Startup News
+export async function fetchVentureBeatStartups(): Promise<NewsItem[]> {
+  return parseRSSFeed(
+    'https://venturebeat.com/category/startups/feed/',
+    'VentureBeat Startups',
+    ['startups', 'business', 'industry']
+  )
+}
+
+// Product Hunt AI Tools (using RSS if available or generic feed)
+export async function fetchProductHuntAI(): Promise<NewsItem[]> {
+  return parseRSSFeed(
+    'https://www.producthunt.com/feed?category=artificial-intelligence',
+    'Product Hunt AI',
+    ['tools', 'launch', 'new']
+  )
+}
+
+// TechCrunch Funding News
+export async function fetchTechCrunchFunding(): Promise<NewsItem[]> {
+  return parseRSSFeed(
+    'https://techcrunch.com/category/startups/fundraising/feed/',
+    'TechCrunch Funding',
+    ['funding', 'investment', 'startups']
+  )
 }
 
 // TechCrunch AI News
@@ -383,7 +426,7 @@ export async function fetchWiredAI(): Promise<NewsItem[]> {
 // HuggingFace Papers (using their daily papers page)
 export async function fetchHuggingFacePapers(): Promise<NewsItem[]> {
   const newsItems: NewsItem[] = []
-  
+
   try {
     const response = await axios.get('https://huggingface.co/papers', {
       headers: {
@@ -392,14 +435,14 @@ export async function fetchHuggingFacePapers(): Promise<NewsItem[]> {
     })
 
     const $ = cheerio.load(response.data)
-    
+
     // Parse the papers list (this is a simplified version)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $('article').slice(0, 10).each((_: any, article: any) => {
       const $article = $(article)
       const title = $article.find('h3').text().trim()
       const link = $article.find('a').attr('href')
-      
+
       if (title && link) {
         newsItems.push({
           title,
@@ -420,7 +463,9 @@ export async function fetchHuggingFacePapers(): Promise<NewsItem[]> {
 // Main aggregator function
 export async function aggregateAllNews(): Promise<NewsItem[]> {
   console.log('Starting news aggregation from all sources...')
-  
+
+  console.log('Starting parallel news aggregation...')
+
   const [
     redditNews,
     arxivNews,
@@ -434,11 +479,14 @@ export async function aggregateAllNews(): Promise<NewsItem[]> {
     cohereNews,
     perplexityNews,
     techcrunchNews,
+    techcrunchFunding,
     venturebeatNews,
+    venturebeatStartups,
     vergeNews,
     mitTechNews,
     wiredNews,
     hfNews,
+    phNews,
   ] = await Promise.all([
     fetchRedditNews(),
     fetchArXivNews(),
@@ -452,11 +500,14 @@ export async function aggregateAllNews(): Promise<NewsItem[]> {
     fetchCohereAIBlog(),
     fetchPerplexityAIBlog(),
     fetchTechCrunchAI(),
+    fetchTechCrunchFunding(),
     fetchVentureBeatAI(),
+    fetchVentureBeatStartups(),
     fetchTheVergeAI(),
     fetchMITTechReviewAI(),
     fetchWiredAI(),
     fetchHuggingFacePapers(),
+    fetchProductHuntAI(),
   ])
 
   const allNews = [
@@ -472,26 +523,29 @@ export async function aggregateAllNews(): Promise<NewsItem[]> {
     ...cohereNews,
     ...perplexityNews,
     ...techcrunchNews,
+    ...techcrunchFunding,
     ...venturebeatNews,
+    ...venturebeatStartups,
     ...vergeNews,
     ...mitTechNews,
     ...wiredNews,
     ...hfNews,
+    ...phNews,
   ]
 
-  console.log(`Aggregated ${allNews.length} news items from 17 sources`)
-  
-  // Filter out news older than 2 days
-  const twoDaysAgo = new Date()
-  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
-  
+  console.log(`Aggregated ${allNews.length} total items from 20 sources`)
+
+  // Filter out news older than 3 days (increased for safety buffer)
+  const threeDaysAgo = new Date()
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+
   const recentNews = allNews.filter((item) => {
     const publishDate = new Date(item.publishedAt)
-    return publishDate >= twoDaysAgo
+    return publishDate >= threeDaysAgo
   })
-  
-  console.log(`After filtering (last 2 days): ${recentNews.length} recent items`)
-  
+
+  console.log(`After filtering (last 3 days): ${recentNews.length} items`)
+
   // Remove duplicates based on URL
   const uniqueNews = recentNews.filter(
     (item, index, self) => index === self.findIndex((t) => t.url === item.url)
@@ -501,27 +555,6 @@ export async function aggregateAllNews(): Promise<NewsItem[]> {
 
   // Sort by publish date (newest first)
   uniqueNews.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-
-  // Generate summaries for top 10 news using Gemini with a small concurrency limit
-  console.log('Generating AI summaries with Gemini (concurrency=3)...')
-  const topNews = uniqueNews.slice(0, 10)
-
-  const concurrency = 3
-  for (let i = 0; i < topNews.length; i += concurrency) {
-    const batch = topNews.slice(i, i + concurrency)
-    await Promise.all(
-      batch.map(async (item) => {
-        if (!item.summary) {
-          const summary = await generateSummary(item.title, item.url)
-          if (summary) item.summary = summary
-        }
-      })
-    )
-    // small pause between batches
-    if (i + concurrency < topNews.length) await new Promise((r) => setTimeout(r, 500))
-  }
-
-  console.log(`Generated summaries for ${topNews.filter((n) => n.summary).length} articles`)
 
   return uniqueNews
 }

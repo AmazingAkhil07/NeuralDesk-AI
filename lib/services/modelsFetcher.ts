@@ -18,6 +18,11 @@ interface ModelInfo {
   documentation_url?: string;
   last_model_update?: string;
   personal_rating?: number;
+  pricing?: {
+    input: number;
+    output: number;
+    currency?: string;
+  };
 }
 
 // Known model patterns and their details
@@ -31,6 +36,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Premium pricing, slower inference, high compute requirements',
     capabilities: ['Advanced reasoning', 'Code generation', 'Vision', 'Audio', 'Problem solving'],
     personal_rating: 10,
+    pricing: { input: 10.00, output: 40.00 }
   },
   'gpt-5.2': {
     name: 'GPT-5.2',
@@ -41,6 +47,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Still premium pricing, high compute requirements',
     capabilities: ['Advanced reasoning', 'Enhanced code generation', 'Vision', 'Audio', 'Real-time', 'Problem solving'],
     personal_rating: 10,
+    pricing: { input: 12.00, output: 48.00 }
   },
   'gpt-5o': {
     name: 'GPT-5o',
@@ -61,6 +68,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Less capable than full GPT-5o for complex reasoning',
     capabilities: ['Fast text', 'Vision', 'Code', 'Audio', 'High-volume', 'Cost-effective'],
     personal_rating: 9,
+    pricing: { input: 0.15, output: 0.60 }
   },
   'gpt-6': {
     name: 'GPT-6',
@@ -71,6 +79,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Very high cost, limited availability',
     capabilities: ['Advanced AI', 'Multimodal', 'Reasoning'],
     personal_rating: 10,
+    pricing: { input: 20.00, output: 80.00 }
   },
   'o3': {
     name: 'O3',
@@ -81,6 +90,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Slower responses, higher cost, text-only',
     capabilities: ['Advanced reasoning', 'Mathematics', 'Code debugging', 'Analysis'],
     personal_rating: 9,
+    pricing: { input: 15.00, output: 60.00 }
   },
   'o3-mini': {
     name: 'O3-mini',
@@ -91,6 +101,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Less capable than full O3, still slower than GPT-4o',
     capabilities: ['Reasoning', 'Mathematics', 'Code', 'Problem solving'],
     personal_rating: 9,
+    pricing: { input: 5.00, output: 20.00 }
   },
   'gpt-4o': {
     name: 'GPT-4o',
@@ -101,6 +112,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Less capable than GPT-5 for complex tasks',
     capabilities: ['Text', 'Vision', 'Audio', 'Code', 'Chat'],
     personal_rating: 9,
+    pricing: { input: 2.50, output: 10.00 }
   },
   'gpt-4o-mini': {
     name: 'GPT-4o-mini',
@@ -111,6 +123,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Less capable for complex reasoning',
     capabilities: ['Text', 'Vision', 'Code', 'High-volume tasks'],
     personal_rating: 8,
+    pricing: { input: 0.15, output: 0.60 }
   },
   'gemini-3': {
     name: 'Gemini 3 Ultra',
@@ -121,6 +134,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Premium pricing, limited availability, waitlist required',
     capabilities: ['Multimodal', 'Ultra-long context', 'Code', 'Vision', 'Audio', 'Video analysis', 'Native tool use'],
     personal_rating: 9,
+    pricing: { input: 2.00, output: 6.00 }
   },
   'gemini-4': {
     name: 'Gemini 4',
@@ -131,6 +145,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Very new, limited availability',
     capabilities: ['Advanced multimodal', 'Long context', 'Google services'],
     personal_rating: 9,
+    pricing: { input: 5.00, output: 15.00 }
   },
   'gemini-2.5': {
     name: 'Gemini 2.5 Flash',
@@ -141,6 +156,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Not as capable as Ultra',
     capabilities: ['Fast text', 'Code', 'Vision', 'Multilingual'],
     personal_rating: 8,
+    pricing: { input: 0.075, output: 0.30 }
   },
   'claude-4': {
     name: 'Claude 4 Opus',
@@ -151,6 +167,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Higher cost, text-only, slower, conservative',
     capabilities: ['Advanced analysis', 'Research', 'Code', 'Writing', 'Constitutional AI'],
     personal_rating: 8,
+    pricing: { input: 15.00, output: 75.00 }
   },
   'claude-5': {
     name: 'Claude 5',
@@ -161,6 +178,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Very new, premium pricing',
     capabilities: ['Advanced AI', 'Multimodal', 'Safety-focused'],
     personal_rating: 9,
+    pricing: { input: 10.00, output: 40.00 }
   },
   'claude-3.5': {
     name: 'Claude 3.5 Sonnet',
@@ -171,6 +189,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Not as powerful as Opus 4 for extreme complexity',
     capabilities: ['Text', 'Code', 'Vision', 'Computer use', 'Artifacts', 'Tool use'],
     personal_rating: 8,
+    pricing: { input: 3.00, output: 15.00 }
   },
   'claude-3.7': {
     name: 'Claude 3.7 Sonnet',
@@ -181,6 +200,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Not as powerful as Opus for extreme complexity',
     capabilities: ['Text', 'Code', 'Vision', 'Computer use', 'Tool use'],
     personal_rating: 8,
+    pricing: { input: 3.00, output: 15.00 }
   },
   'claude-4.5': {
     name: 'Claude 4.5 Sonnet',
@@ -191,6 +211,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Higher cost than 3.5, slower than lighter models',
     capabilities: ['Advanced coding', 'Vision', 'Extended thinking', 'Computer use', 'Tool use', 'Artifacts'],
     personal_rating: 9,
+    pricing: { input: 3.00, output: 15.00 }
   },
   'claude-4.5-opus': {
     name: 'Claude 4.5 Opus',
@@ -201,6 +222,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Highest cost, slower inference, premium tier',
     capabilities: ['Advanced reasoning', 'Vision', 'Extended thinking', 'Computer use', 'Superior coding', 'Research'],
     personal_rating: 9,
+    pricing: { input: 15.00, output: 75.00 }
   },
   'deepseek-v3': {
     name: 'DeepSeek V3',
@@ -211,6 +233,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Text-only, Chinese company concerns',
     capabilities: ['Advanced coding', 'Math', 'Reasoning', 'Multilingual'],
     personal_rating: 9,
+    pricing: { input: 0.14, output: 0.28 }
   },
   'grok-3': {
     name: 'Grok 3',
@@ -221,6 +244,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Less proven than competitors, X platform dependency',
     capabilities: ['Real-time data', 'Vision', 'Code', 'X integration'],
     personal_rating: 8,
+    pricing: { input: 5.00, output: 15.00 }
   },
   'gemini-2.5-pro': {
     name: 'Gemini 2.5 Pro',
@@ -231,6 +255,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Expensive, slower responses',
     capabilities: ['Multimodal', 'Long context', 'Code', 'Search integration'],
     personal_rating: 9,
+    pricing: { input: 1.25, output: 3.75 }
   },
   'gemini-2.0-flash': {
     name: 'Gemini 2.0 Flash',
@@ -241,6 +266,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Less capable than Pro',
     capabilities: ['Speed', 'Multimodal', 'Code', 'Cost-effective'],
     personal_rating: 8,
+    pricing: { input: 0.10, output: 0.40 }
   },
   'llama-4': {
     name: 'Llama 4 405B',
@@ -251,6 +277,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Requires significant compute (8x A100/H100)',
     capabilities: ['Text', 'Code', 'Reasoning', 'Multilingual', 'Fine-tuning'],
     personal_rating: 9,
+    pricing: { input: 0.00, output: 0.00 }
   },
   'llama-5': {
     name: 'Llama 5',
@@ -261,6 +288,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Very high compute requirements',
     capabilities: ['Multimodal', 'Open source', 'Self-hosting'],
     personal_rating: 10,
+    pricing: { input: 0.00, output: 0.00 }
   },
   'llama-3.3': {
     name: 'Llama 3.3 70B',
@@ -271,6 +299,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Less capable than 405B, no multimodal',
     capabilities: ['Text', 'Code', 'Chat', 'Local deployment'],
     personal_rating: 8,
+    pricing: { input: 0.00, output: 0.00 }
   },
   'mistral-large-2': {
     name: 'Mistral Large 2',
@@ -281,6 +310,7 @@ const MODEL_DETAILS: Record<string, Partial<ModelInfo>> = {
     weaknesses: 'Less capable than frontier models, smaller ecosystem',
     capabilities: ['Multilingual', 'Code', 'Function calling', 'GDPR compliant'],
     personal_rating: 7,
+    pricing: { input: 2.00, output: 6.00 }
   },
 };
 
@@ -308,51 +338,66 @@ async function fetchOpenAIModels(): Promise<ModelInfo[]> {
     const data = await response.json();
     const models: ModelInfo[] = [];
 
-    // Dynamic filter: automatically includes future models (GPT-6, GPT-7, etc.)
+    // Dynamic filter: automatically includes future models (GPT-5, GPT-6, GPT-7, etc.)
     const relevantModels = data.data.filter((m: any) => {
       const id = m.id.toLowerCase();
-      
-      // Match GPT-5+ models (5.2, 5o, 5o-mini, 6, 7, etc.) - future-proof
-      if (id.match(/gpt-[5-9]/) || id.match(/gpt-1[0-9]/)) return true;
-      
-      // Match O series reasoning models (O3, O3-mini, O4, etc.)
-      if (id.match(/\bo[3-9](-mini)?\b/)) return true;
-      
-      // Keep GPT-4o family (still widely used)
-      if (id.includes('gpt-4o')) return true;
-      
+
+      // EXCLUDE legacy models (3.5, 4.0, 4.1, early O1 previews)
+      if (id.includes('gpt-3.5') || id.match(/gpt-4(?!o)/) || id.includes('preview')) return false;
+
+      // Match GPT-4o, GPT-5+ models (5.2, 5o, 6, 7, etc.)
+      if (id.startsWith('gpt-4o') || id.match(/^gpt-[5-9]/)) return true;
+
+      // Match O series (o1, o3, o4, etc.)
+      if (id.match(/^o[1-3]/)) return true;
+
       return false;
     });
 
     for (const apiModel of relevantModels) {
       const modelId = apiModel.id;
       // Sort keys by length (longest first) to match most specific version first
-      // This ensures "gpt-5.2" is matched before "gpt-5"
       const modelKey = Object.keys(MODEL_DETAILS)
         .sort((a, b) => b.length - a.length)
         .find(key => modelId.toLowerCase().includes(key));
       const details = modelKey ? MODEL_DETAILS[modelKey] : {};
 
+      const displayName = details.name || formatModelName(modelId);
+      const isMini = modelId.toLowerCase().includes('mini');
+      const isOseries = modelId.toLowerCase().startsWith('o');
+
       models.push({
-        name: details.name || formatModelName(modelId),
+        name: displayName,
         company: 'OpenAI',
         model_type: details.model_type || 'multimodal',
         model_id: modelId,
         context_length: getContextLength(modelId),
         is_open_source: false,
-        description: details.description || `${modelId} - Latest OpenAI model`,
-        strengths: details.strengths,
-        weaknesses: details.weaknesses,
+        description: details.description || (isOseries ? `Advanced reasoning model from OpenAI` : `Frontier AI model from OpenAI`),
+        strengths: details.strengths || (isOseries ? "Complex reasoning, mathematical logic, deep analysis" : "Versatile, fast, high-quality multimodal output"),
+        weaknesses: details.weaknesses || (isMini ? "Lower reasoning depth than full versions" : "Premium usage costs"),
         capabilities: details.capabilities || ['Text generation', 'Code', 'Analysis'],
         url: 'https://platform.openai.com',
         documentation_url: `https://platform.openai.com/docs/models/${modelId}`,
         last_model_update: apiModel.created ? new Date(apiModel.created * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        personal_rating: details.personal_rating || 8,
+        personal_rating: details.personal_rating || (isMini ? 8 : 9),
+        pricing: details.pricing,
       });
     }
 
+    // Deduplicate by name: Keep only the newest version of each display name
+    const uniqueModelsMap = new Map<string, ModelInfo>();
+    for (const model of models) {
+      const existing = uniqueModelsMap.get(model.name);
+      if (!existing || (model.last_model_update && existing.last_model_update && model.last_model_update > existing.last_model_update)) {
+        uniqueModelsMap.set(model.name, model);
+      }
+    }
+
+    const uniqueModels = Array.from(uniqueModelsMap.values());
+
     // If API returned models, use them, otherwise fallback
-    return models.length > 0 ? models : getStaticOpenAIModels();
+    return uniqueModels.length > 0 ? uniqueModels : getStaticOpenAIModels();
   } catch (error) {
     console.error('Error fetching OpenAI models:', error);
     return getStaticOpenAIModels();
@@ -360,9 +405,17 @@ async function fetchOpenAIModels(): Promise<ModelInfo[]> {
 }
 
 function formatModelName(modelId: string): string {
-  return modelId
+  // Remove technical dates like "-2024-05-13" or "-04-14" or technical suffixes like "-preview"
+  let cleanName = modelId.replace(/-(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|preview|latest)$/, '');
+
+  // Format casing properly
+  return cleanName
     .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(word => {
+      if (word.toLowerCase() === 'gpt') return 'GPT';
+      if (word.match(/^[o]\d/)) return word.toUpperCase(); // O1, O3
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
     .join(' ');
 }
 
@@ -388,7 +441,7 @@ function getContextLength(modelId: string): number {
 async function fetchAnthropicModels(): Promise<ModelInfo[]> {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    
+
     if (!apiKey || apiKey === 'your_anthropic_api_key_here') {
       console.log('No Anthropic API key, using static models');
       return getAnthropicModels();
@@ -410,10 +463,11 @@ async function fetchAnthropicModels(): Promise<ModelInfo[]> {
     const data = await response.json();
     const models: ModelInfo[] = [];
 
-    // Filter for latest Claude models (4.5+, 4+)
+    // Filter for latest Claude models (3.5+, 4+, 5+)
     const relevantModels = data.data?.filter((m: any) => {
       const id = m.id.toLowerCase();
-      return id.includes('claude-4.5') || id.includes('claude-4') || id.includes('claude-5');
+      return id.includes('claude-3-5') || id.includes('claude-3.5') ||
+        id.includes('claude-4') || id.includes('claude-5');
     }) || [];
 
     for (const apiModel of relevantModels) {
@@ -423,8 +477,10 @@ async function fetchAnthropicModels(): Promise<ModelInfo[]> {
         .find(key => modelId.toLowerCase().includes(key));
       const details = modelKey ? MODEL_DETAILS[modelKey] : {};
 
+      const displayName = details.name || formatModelName(modelId);
+
       models.push({
-        name: details.name || formatModelName(modelId),
+        name: displayName,
         company: 'Anthropic',
         model_type: details.model_type || 'multimodal',
         model_id: modelId,
@@ -438,10 +494,22 @@ async function fetchAnthropicModels(): Promise<ModelInfo[]> {
         documentation_url: 'https://docs.anthropic.com',
         last_model_update: apiModel.created_at ? new Date(apiModel.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         personal_rating: details.personal_rating || 9,
+        pricing: details.pricing,
       });
     }
 
-    return models.length > 0 ? models : getAnthropicModels();
+    // Deduplicate by name: Keep only the newest version of each display name
+    const uniqueModelsMap = new Map<string, ModelInfo>();
+    for (const model of models) {
+      const existing = uniqueModelsMap.get(model.name);
+      if (!existing || (model.last_model_update && existing.last_model_update && model.last_model_update > existing.last_model_update)) {
+        uniqueModelsMap.set(model.name, model);
+      }
+    }
+
+    const uniqueModels = Array.from(uniqueModelsMap.values());
+
+    return uniqueModels.length > 0 ? uniqueModels : getAnthropicModels();
   } catch (error) {
     console.error('Error fetching Anthropic models:', error);
     return getAnthropicModels();
@@ -455,7 +523,7 @@ async function fetchAnthropicModels(): Promise<ModelInfo[]> {
 async function fetchGoogleModels(): Promise<ModelInfo[]> {
   try {
     const apiKey = process.env.GOOGLE_AI_API_KEY;
-    
+
     if (!apiKey || apiKey === 'your_google_ai_api_key_here') {
       console.log('No Google AI API key, using static models');
       return getGoogleModels();
@@ -473,10 +541,13 @@ async function fetchGoogleModels(): Promise<ModelInfo[]> {
     const data = await response.json();
     const models: ModelInfo[] = [];
 
-    // Filter for latest Gemini models (3+, 2.5+)
+    // Filter for Gemini models (1.5+, 2.0+, 2.5+, 3.0+, 4.0+)
     const relevantModels = data.models?.filter((m: any) => {
       const name = m.name.toLowerCase();
-      return name.includes('gemini-3') || name.includes('gemini-2.5') || name.includes('gemini-2.0');
+      return name.match(/gemini-(1\.5|[2-4])\./) ||
+        name.includes('gemini-3') ||
+        name.includes('gemini-2') ||
+        name.includes('gemini-1.5');
     }) || [];
 
     for (const apiModel of relevantModels) {
@@ -486,8 +557,10 @@ async function fetchGoogleModels(): Promise<ModelInfo[]> {
         .find(key => modelName.toLowerCase().includes(key));
       const details = modelKey ? MODEL_DETAILS[modelKey] : {};
 
+      const displayName = details.name || formatModelName(modelName);
+
       models.push({
-        name: details.name || formatModelName(modelName),
+        name: displayName,
         company: 'Google',
         model_type: details.model_type || 'multimodal',
         model_id: modelName,
@@ -501,10 +574,22 @@ async function fetchGoogleModels(): Promise<ModelInfo[]> {
         documentation_url: 'https://ai.google.dev/docs',
         last_model_update: new Date().toISOString().split('T')[0],
         personal_rating: details.personal_rating || 9,
+        pricing: details.pricing,
       });
     }
 
-    return models.length > 0 ? models : getGoogleModels();
+    // Deduplicate by name: Keep only the newest version of each display name
+    const uniqueModelsMap = new Map<string, ModelInfo>();
+    for (const model of models) {
+      const existing = uniqueModelsMap.get(model.name);
+      if (!existing || (model.last_model_update && existing.last_model_update && model.last_model_update > existing.last_model_update)) {
+        uniqueModelsMap.set(model.name, model);
+      }
+    }
+
+    const uniqueModels = Array.from(uniqueModelsMap.values());
+
+    return uniqueModels.length > 0 ? uniqueModels : getGoogleModels();
   } catch (error) {
     console.error('Error fetching Google AI models:', error);
     return getGoogleModels();
@@ -528,6 +613,7 @@ function getStaticOpenAIModels(): ModelInfo[] {
       documentation_url: 'https://platform.openai.com/docs',
       last_model_update: '2026-01-24',
       personal_rating: 10,
+      pricing: { input: 10.00, output: 40.00 }
     },
     {
       name: 'GPT-5o',
@@ -613,6 +699,7 @@ function getAnthropicModels(): ModelInfo[] {
       documentation_url: 'https://docs.anthropic.com',
       last_model_update: '2026-01-22',
       personal_rating: 9,
+      pricing: { input: 15.00, output: 75.00 }
     },
     {
       name: 'Claude 4.5 Sonnet',
@@ -629,6 +716,7 @@ function getAnthropicModels(): ModelInfo[] {
       documentation_url: 'https://docs.anthropic.com',
       last_model_update: '2026-01-20',
       personal_rating: 9,
+      pricing: { input: 3.00, output: 15.00 }
     },
     {
       name: 'Claude 4 Opus',
@@ -645,6 +733,7 @@ function getAnthropicModels(): ModelInfo[] {
       documentation_url: 'https://docs.anthropic.com',
       last_model_update: '2026-01-10',
       personal_rating: 8,
+      pricing: { input: 15.00, output: 75.00 }
     },
   ];
 }
@@ -666,6 +755,7 @@ function getDeepSeekModels(): ModelInfo[] {
       documentation_url: 'https://github.com/deepseek-ai',
       last_model_update: '2026-01-15',
       personal_rating: 9,
+      pricing: { input: 0.14, output: 0.28 }
     },
   ];
 }
@@ -687,6 +777,7 @@ function getGrokModels(): ModelInfo[] {
       documentation_url: 'https://docs.x.ai',
       last_model_update: '2026-01-22',
       personal_rating: 8,
+      pricing: { input: 5.00, output: 15.00 }
     },
   ];
 }
@@ -708,6 +799,7 @@ function getGoogleModels(): ModelInfo[] {
       documentation_url: 'https://ai.google.dev/docs',
       last_model_update: '2026-01-15',
       personal_rating: 9,
+      pricing: { input: 2.00, output: 6.00 }
     },
     {
       name: 'Gemini 2.5 Pro',
@@ -724,6 +816,7 @@ function getGoogleModels(): ModelInfo[] {
       documentation_url: 'https://ai.google.dev/docs',
       last_model_update: '2026-01-18',
       personal_rating: 8,
+      pricing: { input: 1.25, output: 3.75 }
     },
     {
       name: 'Gemini 2.0 Flash',
@@ -740,6 +833,7 @@ function getGoogleModels(): ModelInfo[] {
       documentation_url: 'https://ai.google.dev/docs',
       last_model_update: '2026-01-12',
       personal_rating: 7,
+      pricing: { input: 0.10, output: 0.40 }
     },
   ];
 }
@@ -761,6 +855,7 @@ function getMetaModels(): ModelInfo[] {
       documentation_url: 'https://github.com/meta-llama',
       last_model_update: '2026-01-10',
       personal_rating: 8,
+      pricing: { input: 0.00, output: 0.00 }
     },
     {
       name: 'Llama 4 70B',
@@ -777,6 +872,7 @@ function getMetaModels(): ModelInfo[] {
       documentation_url: 'https://github.com/meta-llama',
       last_model_update: '2026-01-08',
       personal_rating: 7,
+      pricing: { input: 0.00, output: 0.00 }
     },
   ];
 }
@@ -798,6 +894,7 @@ function getMistralModels(): ModelInfo[] {
       documentation_url: 'https://docs.mistral.ai',
       last_model_update: '2026-01-14',
       personal_rating: 8,
+      pricing: { input: 2.00, output: 6.00 }
     },
   ];
 }
@@ -814,7 +911,7 @@ function getOtherModels(): ModelInfo[] {
  */
 export async function fetchAllLatestModels(): Promise<ModelInfo[]> {
   console.log('Fetching latest AI models from all providers...');
-  
+
   const [openai, google, anthropic, deepseek, grok, meta, mistral] = await Promise.all([
     fetchOpenAIModels(),                    // Dynamic: Uses OpenAI API
     fetchGoogleModels(),                    // Dynamic: Uses Google AI API
@@ -827,7 +924,7 @@ export async function fetchAllLatestModels(): Promise<ModelInfo[]> {
 
   const allModels = [...openai, ...google, ...anthropic, ...deepseek, ...grok, ...meta, ...mistral];
   console.log(`Found ${allModels.length} latest AI models from all providers`);
-  
+
   return allModels;
 }
 

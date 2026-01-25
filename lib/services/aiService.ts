@@ -1,7 +1,9 @@
 import OpenAI from 'openai'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
-import puppeteer from 'puppeteer'
+// Puppeteer is optional - only used as last resort fallback for article extraction
+// Install with: npm install puppeteer (if needed)
+// import puppeteer from 'puppeteer'
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -156,15 +158,16 @@ export async function extractiveSummaryFromUrl(url: string): Promise<string | nu
     console.error('extractiveSummaryFromUrl proxy attempt failed:', err)
   }
 
-  // Last resort: try Puppeteer to render the page and extract visible text
+  // Last resort: Puppeteer fallback (DISABLED - puppeteer not installed)
+  // To enable: npm install puppeteer and uncomment the import at the top
+  // Uncomment this block if you need JavaScript-rendered page extraction:
+  /*
   try {
     const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] })
     const page = await browser.newPage()
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 })
-    // give some time for dynamic content
     await page.waitForTimeout(800)
-    // Try to extract from common article selectors, fallback to body text
     const articleText = await page.evaluate(() => {
       const selectors = ['article', 'main', '[role="main"]']
       for (const sel of selectors) {
@@ -182,6 +185,7 @@ export async function extractiveSummaryFromUrl(url: string): Promise<string | nu
   } catch (err) {
     console.error('extractiveSummaryFromUrl puppeteer attempt failed:', err)
   }
+  */
 
   return null
 }
@@ -195,14 +199,14 @@ export async function batchSummarizeNews(
 
   for (let i = 0; i < newsItems.length; i += batchSize) {
     const batch = newsItems.slice(i, i + batchSize)
-    
+
     const batchPromises = batch.map(async (item) => {
       const summary = await generateNewsSummary(item)
       return { url: item.url, summary }
     })
 
     const results = await Promise.all(batchPromises)
-    
+
     results.forEach(({ url, summary }) => {
       summaries.set(url, summary)
     })

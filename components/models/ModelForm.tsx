@@ -64,6 +64,7 @@ export function ModelForm({
         documentation_url: initialData.documentation_url || undefined,
         personal_rating: initialData.personal_rating || undefined,
         notes: initialData.notes || undefined,
+        pricing: initialData.pricing || undefined,
       };
     }
     return {
@@ -257,6 +258,49 @@ export function ModelForm({
                 placeholder="https://..."
               />
             </div>
+          </div>
+
+          {/* Pricing Intelligence */}
+          <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-4">
+            <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+              <span>◈</span> Price Architecture (USD per 1M Tokens)
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pricing_input" className="text-[10px] font-bold">Input (Prompts / Questions)</Label>
+                <Input
+                  id="pricing_input"
+                  type="number"
+                  step="0.0001"
+                  value={formData.pricing?.input || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    pricing: { ...formData.pricing, input: e.target.value ? parseFloat(e.target.value) : undefined }
+                  })}
+                  placeholder="e.g., 0.15"
+                  className="bg-white/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pricing_output" className="text-[10px] font-bold">Output (AI Answers)</Label>
+                <Input
+                  id="pricing_output"
+                  type="number"
+                  step="0.0001"
+                  value={formData.pricing?.output || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    pricing: { ...formData.pricing, output: e.target.value ? parseFloat(e.target.value) : undefined }
+                  })}
+                  placeholder="e.g., 0.60"
+                  className="bg-white/50"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground font-medium italic leading-relaxed">
+              * Tokens are snippets of words (~750 words = 1000 tokens). <br />
+              * <strong>Input:</strong> What you send to AI. <strong>Output:</strong> What the AI replies back.
+            </p>
           </div>
 
           {/* Rating and Last Update */}

@@ -30,94 +30,114 @@ export async function GET(request: Request) {
       })
     }
 
-    // Step 2: Generate AI summaries for top items (limit to 20)
-    const topNews = newsItems.slice(0, 20)
-    console.log(`Generating summaries for ${topNews.length} items...`)
+    // Step 2: Generate AI summaries for top items (limit to 30 for speed)
+    // Using high concurrency for speed
+    const processLimit = 30;
+    const topNews = newsItems.slice(0, processLimit);
+    console.log(`Generating parallel summaries for ${topNews.length} items...`);
 
-    let summaries = new Map<string, string>()
+    let summaries = new Map<string, string>();
     try {
+      // Parallel batch summarize
       summaries = await batchSummarizeNews(
-        topNews.map((item) => ({
-          title: item.title,
-          url: item.url,
-          source: item.source,
-        }))
-      )
+        topNews.map((item) => ({ title: item.title, url: item.url, source: item.source }))
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.log('⚠️  Skipping AI summaries (quota exceeded or error):', errorMessage)
-      // Continue without summaries
+      console.log('⚠️ Skipping AI summaries due to error or quota');
     }
 
-    // Step 3: Get current authenticated user or all users
-    const supabase = await createClient()
-    
-    // Try to get current user first
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
-    let userIds: string[] = []
-    
+    // Step 3: Identify recipients
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    let userIds: string[] = [];
     if (user) {
-      // We have an authenticated user
-      userIds = [user.id]
-      console.log(`Using authenticated user: ${user.id}`)
+      userIds = [user.id];
     } else {
-      // Fall back to getting all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id')
-
-      if (profilesError || !profiles || profiles.length === 0) {
-        console.error('Error fetching profiles:', profilesError)
-        return NextResponse.json({
-          message: 'No users found. Please log in first.',
-          count: 0,
-        })
-      }
-      
-      userIds = profiles.map((p: { id: string }) => p.id)
+      const { data: profiles } = await supabase.from('profiles').select('id');
+      if (!profiles || profiles.length === 0) return NextResponse.json({ success: true, processed: 0 });
+      userIds = profiles.map(p => p.id);
     }
 
-    // Step 4: Insert news items for each user
-    let insertedCount = 0
+    let totalInserted = 0;
+    let totalUpdated = 0;
+    let totalDeleted = 0;
+
+    // Step 4: Process per user with Change Detection
     for (const userId of userIds) {
-      const newsToInsert = topNews.map((item) => ({
-        user_id: userId,
-        title: item.title,
-        url: item.url,
-        source: item.source,
-        summary: summaries.get(item.url) || null,
-        tags: item.tags,
-        published_at: item.publishedAt,
-      }))
+      console.log(`💾 Syncing news for user: ${userId}`);
 
-      // Check for duplicates before inserting
-      const { data: existing } = await supabase
-        .from('news')
-        .select('url')
-        .eq('user_id', userId)
-        .in('url', newsToInsert.map((n) => n.url))
+      for (const item of topNews) {
+        const summary = summaries.get(item.url) || item.summary || null;
 
-      const existingUrls = new Set((existing as { url: string}[] | null)?.map((n) => n.url) || [])
-      const newItems = newsToInsert.filter((item) => !existingUrls.has(item.url))
+        // Check for existing item
+        const { data: existing } = await (supabase
+          .from('news') as any)
+          .select('*')
+          .eq('user_id', userId)
+          .eq('url', item.url)
+          .maybeSingle();
 
-      if (newItems.length > 0) {
-        const { error } = await supabase.from('news').insert(newItems as any)
+        if (existing) {
+          // Change Detection: Only update if summary or tags changed
+          const hasChanges = (summary !== (existing as any).summary) ||
+            (JSON.stringify(item.tags) !== JSON.stringify((existing as any).tags));
 
-        if (error) {
-          console.error(`Error inserting news for user ${userId}:`, error)
+          if (hasChanges) {
+            const { error } = await (supabase
+              .from('news') as any)
+              .update({
+                title: item.title,
+                summary,
+                tags: item.tags,
+                published_at: item.publishedAt,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', (existing as any).id);
+
+            if (!error) totalUpdated++;
+          }
         } else {
-          insertedCount += newItems.length
-          console.log(`Inserted ${newItems.length} news items for user ${userId}`)
+          // Insert brand new item
+          const { error } = await (supabase
+            .from('news') as any)
+            .insert({
+              user_id: userId,
+              title: item.title,
+              url: item.url,
+              source: item.source,
+              summary,
+              tags: item.tags,
+              published_at: item.publishedAt,
+            });
+
+          if (!error) totalInserted++;
         }
       }
+
+      // Step 5: Clean up old news (3 days older) for this specific user
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+      const { error: cleanupError, count } = await (supabase
+        .from('news') as any)
+        .delete({ count: 'exact' })
+        .eq('user_id', userId)
+        .lt('published_at', threeDaysAgo.toISOString());
+
+      if (!cleanupError) totalDeleted += (count || 0);
     }
 
     return NextResponse.json({
-      message: 'News aggregation completed',
-      fetched: newsItems.length,
-      inserted: insertedCount,
-    })
+      success: true,
+      message: 'News sync completed',
+      stats: {
+        fetched: newsItems.length,
+        newNews: totalInserted,
+        updatedNews: totalUpdated,
+        deletedOld: totalDeleted,
+      },
+    });
   } catch (error: any) {
     console.error('Cron job error:', error)
     return NextResponse.json(

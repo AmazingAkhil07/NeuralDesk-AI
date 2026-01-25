@@ -22,91 +22,7 @@ function isNewerVersion(newName: string, oldName: string, company: string): bool
   return newVersion > oldVersion;
 }
 
-/**
- * Identify and remove outdated model versions
- * Example: Keep GPT-5.2, remove GPT-5 and older GPTs
- */
-async function cleanupOutdatedModels(supabase: any, userId: string, latestModels: any[]) {
-  try {
-    // Get all existing models for the user
-    const { data: existingModels } = await supabase
-      .from('models')
-      .select('id, name, company, created_at')
-      .eq('user_id', userId);
-
-    if (!existingModels || existingModels.length === 0) return 0;
-
-    // Create a set of latest model names for quick lookup
-    const latestModelNames = new Set(latestModels.map(m => `${m.company}-${m.name}`));
-
-    // Group models by company and base name (e.g., "GPT", "Claude", "Gemini")
-    const modelGroups = new Map<string, any[]>();
-
-    for (const model of existingModels) {
-      // Extract base model name (GPT, Claude, Gemini, O3, Llama, etc.)
-      // For "Claude 4.5 Sonnet" -> "Claude"
-      // For "GPT-5.2" -> "GPT"
-      const baseName = model.name.split(/[\s\-\d]/)[0] || model.name;
-      const key = `${model.company}-${baseName}`;
-      
-      if (!modelGroups.has(key)) {
-        modelGroups.set(key, []);
-      }
-      modelGroups.get(key)!.push(model);
-    }
-
-    const modelsToDelete: string[] = [];
-
-    // For each group, keep only the models that are in latestModels list
-    for (const [key, models] of modelGroups.entries()) {
-      if (models.length <= 1) continue; // No duplicates/old versions
-
-      // Sort by version (newest first) - extract all numbers from name
-      models.sort((a, b) => {
-        const extractVersion = (name: string) => {
-          const matches = name.match(/\d+(\.\d+)?/g);
-          if (!matches) return 0;
-          // Convert to number: "5.2" -> 5.2, "4.5" -> 4.5
-          return parseFloat(matches.join('.'));
-        };
-        
-        const aVersion = extractVersion(a.name);
-        const bVersion = extractVersion(b.name);
-        return bVersion - aVersion;
-      });
-
-      // Mark models for deletion if they're NOT in the latest models list
-      for (const model of models) {
-        const modelKey = `${model.company}-${model.name}`;
-        if (!latestModelNames.has(modelKey)) {
-          modelsToDelete.push(model.id);
-          console.log(`🗑️ Marking for deletion: ${model.name} (${model.company}) - Not in latest list`);
-        }
-      }
-    }
-
-    // Delete outdated models
-    let deletedCount = 0;
-    if (modelsToDelete.length > 0) {
-      const { error } = await (supabase
-        .from('models') as any)
-        .delete()
-        .in('id', modelsToDelete);
-
-      if (!error) {
-        deletedCount = modelsToDelete.length;
-        console.log(`✅ Removed ${deletedCount} outdated model versions`);
-      } else {
-        console.error('Error deleting models:', error);
-      }
-    }
-
-    return deletedCount;
-  } catch (error) {
-    console.error('Error cleaning up outdated models:', error);
-    return 0;
-  }
-}
+// Pruning and cleanup are now unified in the GET handler logic
 
 /**
  * Cron endpoint to automatically update AI models
@@ -115,94 +31,152 @@ async function cleanupOutdatedModels(supabase: any, userId: string, latestModels
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
-    
+
     // Check if user is authenticated (for manual trigger)
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     // Verify cron secret for automated runs (when no user session)
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
-    
+
     // Allow if user is authenticated OR if valid cron secret provided
     const isAuthorized = user || (cronSecret && authHeader === `Bearer ${cronSecret}`);
-    
+
     if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized - Please log in' }, { status: 401 });
     }
 
     // Fetch latest models from all providers
     console.log('Fetching latest AI models...');
-    const latestModels = await fetchAllLatestModels();
-    console.log(`Fetched ${latestModels.length} models`);
+    const allFetchedModels = await fetchAllLatestModels();
 
-    // Step 1: Upsert all models first (insert new or update existing)
-    let insertedCount = 0;
-    let updatedCount = 0;
-    let deletedCount = 0;
+    // Step 1: Deduplicate and prune versions BEFORE processing
+    // This prevents the "add and immediately delete" cycle
+    const uniqueModelsMap = new Map<string, any>();
+    for (const model of allFetchedModels) {
+      const key = `${model.company}-${model.name}`;
+      if (!uniqueModelsMap.has(key)) {
+        uniqueModelsMap.set(key, model);
+      }
+    }
+    let latestModels = Array.from(uniqueModelsMap.values());
 
+    // Prune the latest list so it only contains the highest version of each tier
+    // We reuse the grouping logic here
+    const modelGroups = new Map<string, any[]>();
+    for (const model of latestModels) {
+      const tiers = ['Opus', 'Sonnet', 'Haiku', 'Pro', 'Ultra', 'Flash', 'Mini'];
+      const modelTier = tiers.find(t => model.name.includes(t)) || '';
+      const baseName = model.name.split(/[\s\-\d]/)[0] || model.name;
+      const key = `${model.company}-${baseName}${modelTier ? `-${modelTier}` : ''}`;
+      if (!modelGroups.has(key)) modelGroups.set(key, []);
+      modelGroups.get(key)!.push(model);
+    }
+
+    const prunedLatest: any[] = [];
+    for (const group of modelGroups.values()) {
+      group.sort((a, b) => extractVersionNumber(b.name) - extractVersionNumber(a.name));
+      prunedLatest.push(group[0]); // Keep only newest
+    }
+    latestModels = prunedLatest;
+    console.log(`Processing ${latestModels.length} true frontier AI models`);
+
+    // Step 2: Identify recipients
+    let userIds: string[] = [];
     if (user) {
-      // Prepare models with user_id
-      const modelsToUpsert = latestModels.map(model => ({
-        ...model,
-        user_id: user.id,
-      }));
+      userIds = [user.id];
+      console.log(`✅ Session found: Updating models for user ${user.id}`);
+    } else {
+      console.log('No active session. Fetching all system profiles for update...');
+      const { data: profiles } = await supabase.from('profiles').select('id');
+      if (!profiles || profiles.length === 0) {
+        return NextResponse.json({ success: true, message: 'No profiles to update', stats: { totalFetched: latestModels.length, newModels: 0, updatedModels: 0, deletedOutdated: 0 } });
+      }
+      userIds = profiles.map(p => p.id);
+    }
 
-      // Upsert models (insert new or update existing)
-      for (const model of modelsToUpsert) {
-        // Check if model exists with exact name match
+    let totalInserted = 0;
+    let totalUpdated = 0;
+    let totalDeleted = 0;
+
+    for (const userId of userIds) {
+      console.log(`💾 Syncing models for user: ${userId}`);
+
+      for (const model of latestModels) {
+        const modelWithUser = { ...model, user_id: userId };
+
         const { data: existing } = await (supabase
           .from('models') as any)
-          .select('id, name')
-          .eq('user_id', user.id)
+          .select('*')
+          .eq('user_id', userId)
           .eq('company', model.company)
           .eq('name', model.name)
-          .single();
+          .maybeSingle();
 
         if (existing) {
-          // Update existing model with latest data
-          const updateData = {
-            last_model_update: model.last_model_update,
-            context_length: model.context_length,
-            description: model.description,
-            strengths: model.strengths,
-            weaknesses: model.weaknesses,
-            capabilities: model.capabilities,
-            model_type: model.model_type,
-            is_open_source: model.is_open_source,
-            url: model.url,
-            documentation_url: model.documentation_url,
-            personal_rating: model.personal_rating,
-            model_id: model.model_id,
-          };
-          
-          const { error } = await (supabase
-            .from('models') as any)
-            .update(updateData)
-            .eq('id', existing.id);
+          // Change Detection & Protection Logic: ONLY update technical specs
+          // DO NOT overwrite user-entered strategic intelligence
+          const updateData = { ...modelWithUser } as any;
 
-          if (!error) updatedCount++;
+          // Fields that must NEVER be overwritten by the cron
+          const protectedFields = ['pricing', 'strengths', 'weaknesses', 'personal_rating', 'notes'];
+
+          delete updateData.id;
+          delete updateData.user_id;
+          delete updateData.created_at;
+
+          // Remove protected fields only if they have existing user content
+          protectedFields.forEach(field => {
+            const existingVal = (existing as any)[field];
+            // If the field is already populated in DB, don't let the cron touch it
+            if (existingVal !== null && existingVal !== undefined && (Array.isArray(existingVal) ? existingVal.length > 0 : true)) {
+              delete updateData[field];
+            }
+          });
+
+          let hasChanges = false;
+          for (const key in updateData) {
+            const existingVal = (existing as any)[key];
+            const newVal = updateData[key];
+
+            if (Array.isArray(newVal)) {
+              if (JSON.stringify(newVal) !== JSON.stringify(existingVal)) hasChanges = true;
+            } else if (newVal !== existingVal && newVal !== undefined) {
+              hasChanges = true;
+            }
+          }
+
+          if (hasChanges) {
+            const { error } = await (supabase.from('models') as any).update(updateData).eq('id', (existing as any).id);
+            if (!error) totalUpdated++;
+          }
         } else {
           // Insert new model
-          const { error } = await (supabase
-            .from('models') as any)
-            .insert(model);
-
-          if (!error) insertedCount++;
+          const { error } = await (supabase.from('models') as any).insert(modelWithUser);
+          if (!error) totalInserted++;
         }
       }
 
-      // Step 2: NOW clean up outdated models after all new ones are inserted
-      deletedCount = await cleanupOutdatedModels(supabase, user.id, latestModels);
+      // Step 3: Cleanup Models that are no longer in our "True Frontier" list for this user
+      const latestModelKeys = new Set(latestModels.map(m => `${m.company}-${m.name}`));
+      const { data: userModels } = await (supabase.from('models') as any).select('id, name, company').eq('user_id', userId);
+
+      const toDelete = userModels?.filter((m: any) => !latestModelKeys.has(`${m.company}-${m.name}`)) || [];
+      if (toDelete.length > 0) {
+        const { error: delErr } = await (supabase.from('models') as any).delete().in('id', toDelete.map((m: any) => m.id));
+        if (!delErr) totalDeleted += toDelete.length;
+        console.log(`🗑️ Cleaned up ${toDelete.length} legacy models for ${userId}`);
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Models updated successfully',
+      message: 'Models sync completed successfully',
       stats: {
         totalFetched: latestModels.length,
-        newModels: insertedCount,
-        updatedModels: updatedCount,
-        deletedOutdated: deletedCount,
+        newModels: totalInserted,
+        updatedModels: totalUpdated,
+        deletedOutdated: totalDeleted,
       },
     });
   } catch (error) {

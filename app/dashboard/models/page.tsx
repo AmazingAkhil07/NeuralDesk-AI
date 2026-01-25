@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Model, CreateModelInput, ModelType } from '@/types/models';
 import { ModelCard } from '@/components/models/ModelCard';
 import { ModelForm } from '@/components/models/ModelForm';
+import { ModelComparison } from '@/components/models/ModelComparison';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Sparkles, Zap, RefreshCw } from 'lucide-react';
+import { Plus, Search, Sparkles, Zap, RefreshCw, TrendingUp } from 'lucide-react';
+import { Sidebar } from '@/components/sidebar';
 import { toast } from 'sonner';
 
 export default function ModelsPage() {
@@ -22,13 +24,22 @@ export default function ModelsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<Model | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdatingModels, setIsUpdatingModels] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompany, setSelectedCompany] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showOpenSourceOnly, setShowOpenSourceOnly] = useState(false);
-  const [isUpdatingModels, setIsUpdatingModels] = useState(false);
+  const [selectedModels, setSelectedModels] = useState<Model[]>([]);
+  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
+
+  const formatContextLength = (length: number) => {
+    if (!length) return '0';
+    if (length >= 1000000) return `${(length / 1000000).toFixed(1)}M`;
+    if (length >= 1000) return `${(length / 1000).toFixed(0)}K`;
+    return length.toString();
+  };
 
   // Fetch models
   const fetchModels = async () => {
@@ -112,6 +123,18 @@ export default function ModelsPage() {
     }
   };
 
+  const toggleModelSelection = (model: Model, isSelected: boolean) => {
+    if (isSelected) {
+      if (selectedModels.length >= 4) {
+        toast.error('Maximum 4 models can be compared at once');
+        return;
+      }
+      setSelectedModels([...selectedModels, model]);
+    } else {
+      setSelectedModels(selectedModels.filter((m) => m.id !== model.id));
+    }
+  };
+
   // Get unique companies for filter
   const uniqueCompanies = Array.from(new Set(models.map((m) => m.company))).sort();
 
@@ -120,7 +143,7 @@ export default function ModelsPage() {
     try {
       setIsUpdatingModels(true);
       toast.info('Fetching latest AI models...');
-      
+
       const response = await fetch('/api/cron/update-models', {
         method: 'POST',
       });
@@ -135,14 +158,15 @@ export default function ModelsPage() {
         if (result.stats.updatedModels > 0) {
           messages.push(`🔄 ${result.stats.updatedModels} models updated`);
         }
+        // Only show deletions if actually occurred (usually 0 unless pruning happened)
         if (result.stats.deletedOutdated > 0) {
           messages.push(`🗑️ ${result.stats.deletedOutdated} outdated models removed`);
         }
-        
-        const message = messages.length > 0 
-          ? messages.join(' • ') 
+
+        const message = messages.length > 0
+          ? messages.join(' • ')
           : '✓ All models are up to date';
-        
+
         toast.success(message, { duration: 5000 });
         fetchModels();
       } else {
@@ -157,187 +181,249 @@ export default function ModelsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      {/* Header with Glassmorphism */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl bg-white/70 border-b border-white/20 shadow-lg">
-        <div className="container mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
-                  <Sparkles className="h-6 w-6 text-white" />
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="overflow-y-auto">
+        {/* Header with Glassmorphism */}
+        <div className="sticky top-0 z-10 backdrop-blur-xl bg-card/60 border-b border-border/20 shadow-lg">
+          <div className="container mx-auto px-6 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20">
+                    <Sparkles className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <h1 className="text-4xl font-bold tracking-tight">
+                    Model Tracker
+                  </h1>
                 </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  AI Models Tracker
-                </h1>
+                <p className="text-muted-foreground ml-14">
+                  Frontier AI capabilities & technical performance benchmarks
+                </p>
               </div>
-              <p className="text-slate-600 ml-14">
-                Discover and track the most powerful AI models
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={handleUpdateModels}
-                disabled={isUpdatingModels}
-                variant="outline"
-                className="bg-white/80 border-white/20 hover:bg-white shadow-lg"
-                size="lg"
-              >
-                {isUpdatingModels ? (
-                  <>
-                    <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleUpdateModels}
+                  disabled={isUpdatingModels}
+                  variant="outline"
+                  className="bg-card/50 border-border hover:bg-card hover:text-foreground text-muted-foreground transition-all px-6"
+                  size="lg"
+                >
+                  {isUpdatingModels ? (
+                    <RefreshCw className="h-5 w-5 mr-2 animate-spin text-primary" />
+                  ) : (
                     <RefreshCw className="h-5 w-5 mr-2" />
-                    Sync Latest Models
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={() => {
-                  setEditingModel(null);
-                  setIsFormOpen(true);
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                size="lg"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Add Model
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-6 py-8">
-        {/* Filters Card with Glassmorphism */}
-        <div className="mb-8 p-6 rounded-2xl backdrop-blur-xl bg-white/60 border border-white/20 shadow-xl">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="h-5 w-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-slate-800">Filters & Search</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search models..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/80 border-slate-200 focus:border-blue-400 focus:ring-blue-400"
-              />
-            </div>
-
-            {/* Company Filter */}
-            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-              <SelectTrigger className="bg-white/80 border-slate-200">
-                <SelectValue placeholder="All Companies" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Companies</SelectItem>
-                {uniqueCompanies.map((company) => (
-                  <SelectItem key={company} value={company}>
-                    {company}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Type Filter */}
-            <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="bg-white/80 border-slate-200">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="multimodal">Multimodal</SelectItem>
-                <SelectItem value="video">Video</SelectItem>
-                <SelectItem value="audio">Audio</SelectItem>
-                <SelectItem value="image">Image</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Open Source Filter */}
-            <Button
-              variant={showOpenSourceOnly ? 'default' : 'outline'}
-              onClick={() => setShowOpenSourceOnly(!showOpenSourceOnly)}
-              className={
-                showOpenSourceOnly
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0'
-                  : 'bg-white/80 border-slate-200'
-              }
-            >
-              {showOpenSourceOnly ? '✓ ' : ''}Open Source
-            </Button>
-          </div>
-        </div>
-
-        {/* Models Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="relative w-16 h-16 mx-auto mb-4">
-                <div className="absolute inset-0 rounded-full border-4 border-blue-200"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-t-blue-600 animate-spin"></div>
+                  )}
+                  {isUpdatingModels ? 'Syncing...' : 'Sync Models'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setEditingModel(null);
+                    setIsFormOpen(true);
+                  }}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-xl shadow-primary/20 px-8"
+                  size="lg"
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add New Model
+                </Button>
               </div>
-              <p className="text-slate-600 font-medium">Loading models...</p>
             </div>
           </div>
-        ) : models.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-              <Sparkles className="h-12 w-12 text-blue-600" />
+        </div>
+
+        <div className="container mx-auto px-6 py-8">
+          {/* Filtering & Intel Cards */}
+          <div className="grid gap-6 md:grid-cols-3 mb-8">
+            {/* Filters Dashboard */}
+            <div className="md:col-span-2 p-6 rounded-2xl backdrop-blur-xl bg-card/40 border border-border/40 shadow-xl">
+              <div className="flex items-center gap-2 mb-6">
+                <Zap className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold">Search & Insight Filters</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Identify specific model architecture..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-background/50 border-border focus:border-primary/50 focus:ring-primary/20 h-10 rounded-xl"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  {/* Company Filter */}
+                  <div className="flex-1">
+                    <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                      <SelectTrigger className="bg-background/50 border-border h-10 rounded-xl">
+                        <SelectValue placeholder="All Labs" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Every AI Lab</SelectItem>
+                        {uniqueCompanies.map((company) => (
+                          <SelectItem key={company} value={company}>
+                            {company}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Select value={selectedType} onValueChange={setSelectedType}>
+                    <SelectTrigger className="bg-background/50 border-border h-10 rounded-xl">
+                      <SelectValue placeholder="All Modalities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Modalities</SelectItem>
+                      <SelectItem value="text">Text / Reasoning</SelectItem>
+                      <SelectItem value="multimodal">Vision / Multimodal</SelectItem>
+                      <SelectItem value="video">Sora / Video</SelectItem>
+                      <SelectItem value="audio">Voice / Audio</SelectItem>
+                      <SelectItem value="image">DALL-E / Image</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  variant={showOpenSourceOnly ? 'default' : 'outline'}
+                  onClick={() => setShowOpenSourceOnly(!showOpenSourceOnly)}
+                  className={`h-10 rounded-xl font-bold transition-all ${showOpenSourceOnly
+                    ? 'bg-primary text-primary-foreground border-0'
+                    : 'bg-background/50 border-border text-muted-foreground'
+                    }`}
+                >
+                  {showOpenSourceOnly && <Zap className="w-3 h-3 mr-2 fill-current" />}
+                  Open Weight Models Only
+                </Button>
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-2">No models found</h3>
-            <p className="text-slate-600 mb-6">
-              {searchQuery || selectedCompany !== 'all' || selectedType !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Get started by adding your first AI model'}
-            </p>
-            {!searchQuery && selectedCompany === 'all' && selectedType === 'all' && (
-              <Button
-                onClick={() => {
-                  setEditingModel(null);
-                  setIsFormOpen(true);
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Model
-              </Button>
-            )}
+
+            {/* Performance Stats */}
+            <div className="p-6 rounded-2xl backdrop-blur-xl bg-card/60 border border-primary/20 shadow-xl relative overflow-hidden">
+              <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl" />
+              <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold">Lab Performance</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Total Intelligence</span>
+                  <span className="font-bold text-primary">{models.length} Models</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Multimodal Share</span>
+                  <span className="font-bold text-primary">
+                    {models.length > 0 ? Math.round((models.filter(m => m.model_type === 'multimodal').length / models.length) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Max Architecture</span>
+                  <span className="font-bold text-primary">
+                    {models.length > 0 ? formatContextLength(Math.max(...models.map(m => m.context_length || 0))) : '0'} Tokens
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {models.map((model) => (
-              <ModelCard
-                key={model.id}
-                model={model}
-                onEdit={(model) => {
-                  setEditingModel(model);
-                  setIsFormOpen(true);
-                }}
-                onDelete={handleDelete}
-              />
-            ))}
+
+          {/* Models Grid */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="relative w-16 h-16 mx-auto mb-4">
+                  <div className="absolute inset-0 rounded-full border-2 border-border/20"></div>
+                  <div className="absolute inset-0 rounded-full border-2 border-t-primary animate-spin"></div>
+                </div>
+                <p className="text-muted-foreground font-medium tracking-widest uppercase text-[10px]">Processing Benchmarks</p>
+              </div>
+            </div>
+          ) : models.length === 0 ? (
+            <div className="rounded-3xl p-20 text-center border border-border/40 bg-card/20 backdrop-blur-sm">
+              <Sparkles className="h-16 w-16 mx-auto mb-6 text-muted-foreground/30" />
+              <h3 className="text-xl font-bold mb-2">No Model Signatures Found</h3>
+              <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-8">Our discovery engine returned no results for this specific filter set.</p>
+              <Button onClick={() => { setSearchQuery(''); setSelectedCompany('all'); }} variant="link" className="text-primary hover:text-primary/80">Reset Database Filters</Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {models.map((model) => (
+                <ModelCard
+                  key={model.id}
+                  model={model}
+                  onEdit={(m) => {
+                    setEditingModel(m);
+                    setIsFormOpen(true);
+                  }}
+                  onDelete={handleDelete}
+                  isSelected={selectedModels.some((m) => m.id === model.id)}
+                  onSelect={toggleModelSelection}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Model Form Dialog */}
+        <ModelForm
+          open={isFormOpen}
+          onOpenChange={(open) => {
+            setIsFormOpen(open);
+            if (!open) setEditingModel(null);
+          }}
+          onSubmit={handleSubmit}
+          initialData={editingModel}
+          isLoading={isSubmitting}
+        />
+        {/* Comparison Dock - Floating Bar */}
+        {selectedModels.length > 0 && (
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-5">
+            <div className="bg-card/90 backdrop-blur-2xl border border-primary/20 rounded-2xl shadow-2xl p-4 flex items-center gap-6 ring-1 ring-white/10">
+              <div className="flex -space-x-3 overflow-hidden">
+                {selectedModels.map((m) => (
+                  <div key={m.id} className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center border-2 border-background shadow-lg ring-1 ring-primary/20" title={m.name}>
+                    <Zap className="h-4 w-4 text-primary-foreground fill-current" />
+                  </div>
+                ))}
+              </div>
+              <div className="h-8 w-[1px] bg-border/40" />
+              <div className="flex items-center gap-4">
+                <div className="text-sm">
+                  <span className="font-black text-foreground">{selectedModels.length}</span>
+                  <span className="text-muted-foreground ml-1 font-bold">MODELS STAGED</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setSelectedModels([])}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground font-black text-[10px] tracking-widest uppercase px-4"
+                  >
+                    CLEAR
+                  </Button>
+                  <Button
+                    onClick={() => setIsComparisonOpen(true)}
+                    size="sm"
+                    variant="default"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-[10px] tracking-[0.2em] shadow-lg shadow-primary/20 px-6 rounded-xl"
+                  >
+                    COMPARE NOW
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Model Form Dialog */}
-      <ModelForm
-        open={isFormOpen}
-        onOpenChange={(open) => {
-          setIsFormOpen(open);
-          if (!open) setEditingModel(null);
-        }}
-        onSubmit={handleSubmit}
-        initialData={editingModel}
-        isLoading={isSubmitting}
-      />
+        {/* Comparison Modal */}
+        <ModelComparison
+          models={selectedModels}
+          open={isComparisonOpen}
+          onOpenChange={setIsComparisonOpen}
+        />
+      </div>
     </div>
   );
 }
