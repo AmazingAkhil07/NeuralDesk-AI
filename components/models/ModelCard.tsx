@@ -12,9 +12,17 @@ interface ModelCardProps {
   onDelete: (id: string) => void;
   isSelected?: boolean;
   onSelect?: (model: Model, selected: boolean) => void;
+  isDisabled?: boolean;
 }
 
-export function ModelCard({ model, onEdit, onDelete, isSelected, onSelect }: ModelCardProps) {
+export function ModelCard({
+  model,
+  onEdit,
+  onDelete,
+  isSelected = false,
+  onSelect,
+  isDisabled = false,
+}: ModelCardProps) {
   const [showDetails, setShowDetails] = useState(false);
 
   const getModelTypeColor = (type: string) => {
@@ -52,8 +60,15 @@ export function ModelCard({ model, onEdit, onDelete, isSelected, onSelect }: Mod
         className={`group transition-all duration-500 border-border/40 backdrop-blur-xl bg-card hover:-translate-y-2 relative overflow-hidden flex flex-col h-full ${isSelected
           ? 'ring-2 ring-primary ring-offset-4 ring-offset-background shadow-2xl shadow-primary/20 bg-primary/[0.04]'
           : 'hover:shadow-2xl'
-          }`}
+          } ${isDisabled && "opacity-20 grayscale pointer-events-none scale-95"}`}
       >
+        {isDisabled && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+            <Badge variant="outline" className="bg-rose-500/20 text-rose-500 border-rose-500/40 font-black text-[8px] uppercase tracking-widest px-4 py-1 rounded-full">
+              Type Mismatch
+            </Badge>
+          </div>
+        )}
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
         {/* Selection Toggle Button */}

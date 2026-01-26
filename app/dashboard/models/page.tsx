@@ -129,6 +129,13 @@ export default function ModelsPage() {
         toast.error('Maximum 4 models can be compared at once');
         return;
       }
+
+      // Enforce Same Category
+      if (selectedModels.length > 0 && selectedModels[0].model_type !== model.model_type) {
+        toast.error(`Category Mismatch: You can only compare models within the "${selectedModels[0].model_type.toUpperCase()}" ecosystem.`);
+        return;
+      }
+
       setSelectedModels([...selectedModels, model]);
     } else {
       setSelectedModels(selectedModels.filter((m) => m.id !== model.id));
@@ -232,51 +239,42 @@ export default function ModelsPage() {
         </div>
 
         <div className="container mx-auto px-6 py-8">
-          {/* Filtering & Intel Cards */}
-          <div className="grid gap-6 md:grid-cols-3 mb-8">
-            {/* Filters Dashboard */}
-            <div className="md:col-span-2 p-6 rounded-2xl backdrop-blur-xl bg-card/40 border border-border/40 shadow-xl">
-              <div className="flex items-center gap-2 mb-6">
-                <Zap className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-bold">Search & Insight Filters</h2>
+          {/* Search & Filter "Tab" Section */}
+          <div className="relative mb-12">
+            <div className="absolute -top-6 left-8 px-4 py-1.5 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.2em] rounded-t-xl shadow-lg shadow-primary/20">
+              Model Discovery & Insight
+            </div>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 rounded-3xl bg-neutral-900 border border-white/5 shadow-2xl backdrop-blur-md relative z-10">
+              <div className="relative flex-1 group max-w-xl">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/50 transition-colors group-focus-within:text-primary animate-pulse" />
+                <Input
+                  placeholder="IDENTIFY ARCHITECTURE, CAPABILITY, OR LAB..."
+                  className="pl-14 h-11 bg-white/5 border-white/10 rounded-2xl focus-visible:ring-primary/20 focus-visible:ring-offset-0 font-black tracking-widest text-sm placeholder:text-muted-foreground/30 transition-all focus:bg-white/10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Identify specific model architecture..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-background/50 border-border focus:border-primary/50 focus:ring-primary/20 h-10 rounded-xl"
-                  />
+              <div className="h-10 w-[1px] bg-white/10 hidden lg:block" />
+              <div className="flex-1 lg:max-w-3xl flex gap-3">
+                <div className="flex-1">
+                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                    <SelectTrigger className="bg-white/5 border-white/10 h-11 rounded-xl text-xs font-bold font-black tracking-widest text-[#B5C0D0]">
+                      <SelectValue placeholder="All Labs" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-neutral-900 border-white/10">
+                      <SelectItem value="all">Every AI Lab</SelectItem>
+                      {uniqueCompanies.map((company) => (
+                        <SelectItem key={company} value={company}>{company}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <div className="flex gap-2">
-                  {/* Company Filter */}
-                  <div className="flex-1">
-                    <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                      <SelectTrigger className="bg-background/50 border-border h-10 rounded-xl">
-                        <SelectValue placeholder="All Labs" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Every AI Lab</SelectItem>
-                        {uniqueCompanies.map((company) => (
-                          <SelectItem key={company} value={company}>
-                            {company}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
+                <div className="flex-1">
                   <Select value={selectedType} onValueChange={setSelectedType}>
-                    <SelectTrigger className="bg-background/50 border-border h-10 rounded-xl">
+                    <SelectTrigger className="bg-white/5 border-white/10 h-11 rounded-xl text-xs font-bold font-black tracking-widest text-[#B5C0D0]">
                       <SelectValue placeholder="All Modalities" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-neutral-900 border-white/10">
                       <SelectItem value="all">All Modalities</SelectItem>
                       <SelectItem value="text">Text / Reasoning</SelectItem>
                       <SelectItem value="multimodal">Vision / Multimodal</SelectItem>
@@ -286,45 +284,17 @@ export default function ModelsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <Button
                   variant={showOpenSourceOnly ? 'default' : 'outline'}
                   onClick={() => setShowOpenSourceOnly(!showOpenSourceOnly)}
-                  className={`h-10 rounded-xl font-bold transition-all ${showOpenSourceOnly
-                    ? 'bg-primary text-primary-foreground border-0'
-                    : 'bg-background/50 border-border text-muted-foreground'
+                  className={`h-11 px-6 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all ${showOpenSourceOnly
+                    ? 'bg-primary text-primary-foreground border-0 shadow-lg shadow-primary/20'
+                    : 'bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-white'
                     }`}
                 >
                   {showOpenSourceOnly && <Zap className="w-3 h-3 mr-2 fill-current" />}
-                  Open Weight Models Only
+                  Weights
                 </Button>
-              </div>
-            </div>
-
-            {/* Performance Stats */}
-            <div className="p-6 rounded-2xl backdrop-blur-xl bg-card/60 border border-primary/20 shadow-xl relative overflow-hidden">
-              <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl" />
-              <div className="flex items-center gap-2 mb-6">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-bold">Lab Performance</h2>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Total Intelligence</span>
-                  <span className="font-bold text-primary">{models.length} Models</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Multimodal Share</span>
-                  <span className="font-bold text-primary">
-                    {models.length > 0 ? Math.round((models.filter(m => m.model_type === 'multimodal').length / models.length) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Max Architecture</span>
-                  <span className="font-bold text-primary">
-                    {models.length > 0 ? formatContextLength(Math.max(...models.map(m => m.context_length || 0))) : '0'} Tokens
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -360,6 +330,7 @@ export default function ModelsPage() {
                   onDelete={handleDelete}
                   isSelected={selectedModels.some((m) => m.id === model.id)}
                   onSelect={toggleModelSelection}
+                  isDisabled={selectedModels.length > 0 && selectedModels[0].model_type !== model.model_type}
                 />
               ))}
             </div>
@@ -409,7 +380,7 @@ export default function ModelsPage() {
                     variant="default"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-[10px] tracking-[0.2em] shadow-lg shadow-primary/20 px-6 rounded-xl"
                   >
-                    COMPARE NOW
+                    COMPARE BENCHMARKS
                   </Button>
                 </div>
               </div>
