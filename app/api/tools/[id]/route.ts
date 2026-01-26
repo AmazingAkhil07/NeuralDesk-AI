@@ -1,12 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 
 export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
     const supabase = await createClient()
-    const { id } = params
+    const { id } = await context.params
 
     const { data, error } = await (supabase
         .from('tools') as any)
@@ -22,12 +22,12 @@ export async function GET(
 }
 
 export async function PATCH(
-    request: Request,
-    { params }: { params: { id: string } }
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
     const supabase = await createClient()
     const body = await request.json()
-    const { id } = params
+    const { id } = await context.params
 
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData.user) {
@@ -50,11 +50,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
     const supabase = await createClient()
-    const { id } = params
+    const { id } = await context.params
 
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData.user) {
