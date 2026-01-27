@@ -53,6 +53,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     const supabase = await createClient()
+    const supabaseAny = supabase as any
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
         }
 
         const validatedData = validation.data
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAny
             .from('ideas')
             .insert({
                 user_id: user.id,
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
                 target_user: validatedData.target_user,
                 solution: validatedData.solution,
                 why_ai: validatedData.why_ai,
-            })
+            } as any)
             .select()
             .single()
 
