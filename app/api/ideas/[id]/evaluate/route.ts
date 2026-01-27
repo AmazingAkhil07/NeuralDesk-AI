@@ -58,8 +58,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
                     score: result.score,
                     recommendation: result.recommendation,
                     brutal_summary: result.brutal_summary,
-                    analysis_json: result.analysis as any,
-                })
+                    analysis_json: result.analysis,
+                } as any)
                 .eq('id', id)
                 .select()
                 .single()
