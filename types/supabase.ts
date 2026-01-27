@@ -183,30 +183,48 @@ export interface Database {
         Row: {
           id: string
           user_id: string
-          title: string
-          description: string
-          ai_evaluation: string | null
-          status: string
+          name: string
+          one_liner: string
+          problem: string
+          target_user: string
+          solution: string
+          why_ai: string
+          score: number | null
+          recommendation: string | null
+          brutal_summary: string | null
+          analysis_json: any | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          title: string
-          description: string
-          ai_evaluation?: string | null
-          status?: string
+          name: string
+          one_liner: string
+          problem: string
+          target_user: string
+          solution: string
+          why_ai: string
+          score?: number | null
+          recommendation?: string | null
+          brutal_summary?: string | null
+          analysis_json?: any | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          title?: string
-          description?: string
-          ai_evaluation?: string | null
-          status?: string
+          name?: string
+          one_liner?: string
+          problem?: string
+          target_user?: string
+          solution?: string
+          why_ai?: string
+          score?: number | null
+          recommendation?: string | null
+          brutal_summary?: string | null
+          analysis_json?: any | null
           created_at?: string
           updated_at?: string
         }
