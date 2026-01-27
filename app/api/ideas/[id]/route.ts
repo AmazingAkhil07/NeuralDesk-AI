@@ -6,6 +6,7 @@ import { UpdateIdeaInput } from '@/types/ideas'
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
     const supabase = await createClient()
+    const supabaseAny = supabase as any
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -36,7 +37,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
 
     const json: UpdateIdeaInput = await request.json()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAny
         .from('ideas')
         .update({
             name: json.name,
@@ -49,7 +50,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
             recommendation: json.recommendation,
             brutal_summary: json.brutal_summary,
             analysis_json: json.analysis_json,
-        })
+        } as any)
         .eq('id', params.id)
         .select()
         .single()
