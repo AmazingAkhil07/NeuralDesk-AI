@@ -16,6 +16,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         }
 
         const supabase = await createClient()
+        const supabaseAny = supabase as any
         const { data: { user }, error: authError } = await supabase.auth.getUser()
 
         if (authError || !user) {
@@ -52,7 +53,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             console.log(`[Evaluate Route] AI analysis complete. Score: ${result.score}. Updating DB...`);
 
             // 3. Update the idea with results
-            const { data: updatedIdea, error: updateError } = await supabase
+            const { data: updatedIdea, error: updateError } = await supabaseAny
                 .from('ideas')
                 .update({
                     score: result.score,
