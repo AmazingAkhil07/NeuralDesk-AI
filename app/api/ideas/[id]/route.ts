@@ -27,6 +27,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 }
 
 export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+
     const params = await props.params;
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -36,7 +37,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     }
 
     const json: UpdateIdeaInput = await request.json()
-
+    const supabaseAny = supabase as any;
     const { data, error } = await supabaseAny
         .from('ideas')
         .update({
