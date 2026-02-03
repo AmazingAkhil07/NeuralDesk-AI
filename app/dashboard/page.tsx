@@ -110,7 +110,7 @@ export default async function DashboardPage() {
               {stats.map((stat) => {
                 const Icon = stat.icon
                 return (
-                  <a key={stat.title} href={stat.href} className="group">
+                  <Link key={stat.title} href={stat.href} className="group">
                     <Card className={`bg-gradient-to-br ${stat.gradient} border-amber-600/30 hover:border-amber-500/50 transition-all duration-300 cursor-pointer hover:shadow-xl hover:shadow-amber-900/30 h-full hover:-translate-y-1`}>
                       <CardHeader className="pb-4">
                         <div className="flex items-center justify-between">
