@@ -123,7 +123,7 @@ export default async function DashboardPage() {
                         <p className="text-xs text-slate-500 font-medium">{stat.description}</p>
                       </CardContent>
                     </Card>
-                  </a>
+                  </Link>
                 )
               })}
             </div>
@@ -135,31 +135,31 @@ export default async function DashboardPage() {
             <div className="rounded-3xl bg-gradient-to-br from-slate-900/60 to-slate-900/40 border border-amber-600/30 p-8 backdrop-blur-xl">
               <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest mb-8 opacity-70">Quick Access</h3>
               <div className="space-y-3">
-                <a href="/dashboard/ideas" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-amber-600/20 border border-transparent hover:border-amber-500/30 transition-all duration-300 group">
+                <Link href="/dashboard/ideas" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-amber-600/20 border border-transparent hover:border-amber-500/30 transition-all duration-300 group">
                   <div className="h-2.5 w-2.5 rounded-full bg-amber-400 group-hover:bg-amber-300" />
                   <span className="text-sm text-slate-300 font-medium">Startup Ideas</span>
                   <ArrowRight className="h-4 w-4 text-slate-600 ml-auto group-hover:text-amber-400 transition-colors" />
-                </a>
-                <a href="/dashboard/models" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-yellow-600/20 border border-transparent hover:border-yellow-500/30 transition-all duration-300 group">
+                </Link>
+                <Link href="/dashboard/models" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-yellow-600/20 border border-transparent hover:border-yellow-500/30 transition-all duration-300 group">
                   <div className="h-2.5 w-2.5 rounded-full bg-yellow-400 group-hover:bg-yellow-300" />
                   <span className="text-sm text-slate-300 font-medium">AI Models</span>
                   <ArrowRight className="h-4 w-4 text-slate-600 ml-auto group-hover:text-yellow-400 transition-colors" />
-                </a>
-                <a href="/dashboard/tools" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-amber-600/20 border border-transparent hover:border-amber-500/30 transition-all duration-300 group">
+                </Link>
+                <Link href="/dashboard/tools" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-amber-600/20 border border-transparent hover:border-amber-500/30 transition-all duration-300 group">
                   <div className="h-2.5 w-2.5 rounded-full bg-amber-400 group-hover:bg-amber-300" />
                   <span className="text-sm text-slate-300 font-medium">AI Tools</span>
                   <ArrowRight className="h-4 w-4 text-slate-600 ml-auto group-hover:text-amber-400 transition-colors" />
-                </a>
-                <a href="/dashboard/news" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-yellow-600/20 border border-transparent hover:border-yellow-500/30 transition-all duration-300 group">
+                </Link>
+                <Link href="/dashboard/news" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-yellow-600/20 border border-transparent hover:border-yellow-500/30 transition-all duration-300 group">
                   <div className="h-2.5 w-2.5 rounded-full bg-yellow-400 group-hover:bg-yellow-300" />
                   <span className="text-sm text-slate-300 font-medium">AI News</span>
                   <ArrowRight className="h-4 w-4 text-slate-600 ml-auto group-hover:text-yellow-400 transition-colors" />
-                </a>
-                <a href="/dashboard/vault" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-amber-600/20 border border-transparent hover:border-amber-500/30 transition-all duration-300 group">
+                </Link>
+                <Link href="/dashboard/vault" className="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 hover:bg-amber-600/20 border border-transparent hover:border-amber-500/30 transition-all duration-300 group">
                   <div className="h-2.5 w-2.5 rounded-full bg-amber-400 group-hover:bg-amber-300" />
                   <span className="text-sm text-slate-300 font-medium">Knowledge Vault</span>
                   <ArrowRight className="h-4 w-4 text-slate-600 ml-auto group-hover:text-amber-400 transition-colors" />
-                </a>
+                </Link>
               </div>
             </div>
 
