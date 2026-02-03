@@ -11,7 +11,7 @@ const graveyardItemSchema = z.object({
 
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -20,10 +20,11 @@ export async function GET(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { data, error } = await supabase
         .from('idea_graveyard')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', id)
         .eq('user_id', user.id)
         .single()
 
@@ -36,7 +37,7 @@ export async function GET(
 
 export async function PATCH(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -46,13 +47,14 @@ export async function PATCH(
     }
 
     try {
+        const { id } = await params
         const body = await request.json()
         const validated = graveyardItemSchema.parse(body)
 
         const { data, error } = await (supabase
             .from('idea_graveyard') as any)
             .update(validated)
-            .eq('id', params.id)
+            .eq('id', id)
             .eq('user_id', user.id)
             .select()
             .single()
@@ -72,7 +74,7 @@ export async function PATCH(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -81,10 +83,11 @@ export async function DELETE(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { error } = await supabase
         .from('idea_graveyard')
         .delete()
-        .eq('id', params.id)
+        .eq('id', id)
         .eq('user_id', user.id)
 
     if (error) {
