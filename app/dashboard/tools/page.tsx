@@ -7,10 +7,9 @@ import { ToolGrid } from '@/components/tools/ToolGrid'
 import { ToolForm } from '@/components/tools/ToolForm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Radar, Loader2, RefreshCw, Zap, Trash2 } from 'lucide-react'
+import { Plus, Search, Loader2, RefreshCw, Zap } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Orbit } from 'lucide-react'
 
 export default function ToolsPage() {
     const [tools, setTools] = useState<AI_Tool[]>([])
@@ -42,19 +41,6 @@ export default function ToolsPage() {
             toast.error(error.message || 'Sync failed')
         } finally {
             setIsSyncing(false)
-        }
-    }
-
-    const handleClearAll = async () => {
-        if (!confirm('EXTREME ACTION: Are you sure you want to wipe your entire tools radar? This cannot be undone.')) return
-
-        try {
-            const response = await fetch('/api/tools', { method: 'DELETE' })
-            if (!response.ok) throw new Error('Failed to wipe radar')
-            toast.success('Radar cleared. Fresh start initialized.')
-            fetchTools()
-        } catch (error: any) {
-            toast.error(error.message)
         }
     }
 
@@ -122,16 +108,16 @@ export default function ToolsPage() {
         <div className="p-8 max-w-7xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 relative">
-                <div className="absolute -left-12 -top-12 h-64 w-64 bg-primary/5 rounded-full blur-[100px] -z-10" />
+                <div className="absolute -left-12 -top-12 h-64 w-64 bg-amber-500/5 rounded-full blur-[100px] -z-10" />
 
                 <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">
                         <Zap className="h-3 w-3 fill-current" />
                         Live Radar Active
                     </div>
                     <div className="space-y-1">
                         <h1 className="text-4xl font-black tracking-tighter text-foreground leading-tight">
-                            Tools <span className="text-primary italic">Radar.</span>
+                            Tools <span className="text-amber-400 italic">Radar.</span>
                         </h1>
                         <p className="text-muted-foreground text-base font-medium tracking-tight max-w-lg">
                             Curation engine for the next decade of AI innovation. Track, benchmark, and deploy what matters.
@@ -140,13 +126,6 @@ export default function ToolsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button
-                        variant="ghost"
-                        onClick={handleClearAll}
-                        className="group border border-rose-500/10 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500/70 hover:text-rose-500 font-black h-10 px-4 rounded-xl transition-all duration-300"
-                    >
-                        <Trash2 className="h-4 w-4 mr-2" /> CLEAR RADAR
-                    </Button>
                     <Button
                         variant="ghost"
                         onClick={handleSync}
@@ -161,7 +140,7 @@ export default function ToolsPage() {
                             setEditingTool(null)
                             setIsDialogOpen(true)
                         }}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-black px-6 h-10 rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] tracking-widest text-[10px]"
+                        className="bg-amber-500 hover:bg-amber-600 text-white font-black px-6 h-10 rounded-xl shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] tracking-widest text-[10px]"
                     >
                         <Plus className="mr-2 h-4 w-4" /> ADD ENTRY
                     </Button>
@@ -170,15 +149,15 @@ export default function ToolsPage() {
 
             {/* Search & Filter "Tab" Section */}
             <div className="relative">
-                <div className="absolute -top-6 left-8 px-4 py-1.5 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.2em] rounded-t-xl shadow-lg shadow-primary/20">
+                <div className="absolute -top-6 left-8 px-4 py-1.5 bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-t-xl shadow-lg shadow-amber-500/20">
                     Search Intelligence
                 </div>
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 rounded-3xl bg-neutral-900 border border-white/5 shadow-2xl backdrop-blur-md relative z-10">
                     <div className="relative flex-1 group max-w-xl">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/50 transition-colors group-focus-within:text-primary animate-pulse" />
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-500/50 transition-colors group-focus-within:text-amber-500 animate-pulse" />
                         <Input
                             placeholder="SEARCH BY NAME, CAPABILITY, OR CATEGORY..."
-                            className="pl-14 h-11 bg-white/5 border-white/10 rounded-2xl focus-visible:ring-primary/20 focus-visible:ring-offset-0 font-black tracking-widest text-sm placeholder:text-muted-foreground/30 transition-all focus:bg-white/10"
+                            className="pl-14 h-11 bg-white/5 border-white/10 rounded-2xl focus-visible:ring-amber-500/20 focus-visible:ring-offset-0 font-black tracking-widest text-sm placeholder:text-muted-foreground/30 transition-all focus:bg-white/10"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />

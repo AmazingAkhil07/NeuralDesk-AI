@@ -55,15 +55,11 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
     const supabase = await createClient()
 
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    if (userError || !userData.user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    // Delete ALL tools - true radar clear (cron job will repopulate Sunday)
     const { error } = await (supabase
         .from('tools') as any)
         .delete()
-        .eq('user_id', userData.user.id)
+        .gt('id', '')
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })

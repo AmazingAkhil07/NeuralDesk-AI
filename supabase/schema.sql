@@ -59,12 +59,15 @@ CREATE TABLE public.tools (
   category TEXT NOT NULL, -- 'development', 'design', 'productivity', 'research', etc.
   url TEXT,
   logo_url TEXT,
+  status TEXT DEFAULT 'Active', -- 'Active', 'Testing', 'Replaced'
   pricing_model TEXT, -- 'free', 'freemium', 'paid', 'subscription'
   pricing_details JSONB,
   features TEXT[],
+  pros TEXT[],
+  cons TEXT[],
   user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   is_favorite BOOLEAN DEFAULT FALSE,
-  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  rating INTEGER CHECK (rating >= 1 AND rating <= 10),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
@@ -166,8 +169,8 @@ CREATE POLICY "Users can delete their own models" ON public.models
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Tools policies
-CREATE POLICY "Users can view their own tools" ON public.tools
-  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Anyone can view all tools" ON public.tools
+  FOR SELECT USING (true);
 CREATE POLICY "Users can insert their own tools" ON public.tools
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own tools" ON public.tools

@@ -1,9 +1,18 @@
 -- Seed data for AI Tools Radar (50+ Tools)
--- Sync profiles first to ensure we have user IDs to link to
+-- IMPORTANT: This seed depends on public.profiles having at least one row.
+-- Profiles are synced from auth.users first, and tools are inserted with ON CONFLICT to ensure idempotency.
+
+-- Step 1: Sync profiles from auth.users (ensure we have user IDs to link to)
 INSERT INTO public.profiles (id, email)
 SELECT id, email FROM auth.users
 ON CONFLICT (id) DO NOTHING;
 
+-- Step 2: Truncate tools to ensure idempotency (optional - uncomment to wipe existing tools on each seed)
+-- TRUNCATE public.tools RESTART IDENTITY CASCADE;
+
+-- Step 3: Insert tools with ON CONFLICT for upsert behavior
+-- This CROSS JOIN ensures each tool row is paired with each profile.
+-- If no profiles exist after step 1, this insert will produce zero rows and tools table remains empty.
 INSERT INTO public.tools (name, description, category, url, pricing_model, rating, status, user_id, logo_url)
 SELECT name, description, category, url, pricing_model, rating, status, id as user_id, logo_url
 FROM (
@@ -56,6 +65,67 @@ FROM (
   UNION ALL SELECT 'Devin', 'The first AI software engineer.', 'Experimental/Agents', 'https://cognition-labs.com', 'paid', 9, 'Testing', 'https://cognition.ai/favicon.ico'
   UNION ALL SELECT 'MultiOn', 'Automate anything on the web using an agent.', 'Experimental/Agents', 'https://multion.ai', 'freemium', 8, 'Active', 'https://multion.ai/favicon.ico'
   UNION ALL SELECT 'Operator', 'OpenAI''s browser agent for task automation.', 'Experimental/Agents', 'https://openai.com', 'paid', 9, 'Testing', 'https://openai.com/favicon.ico'
+  
+  -- Code Review & Analysis
+  UNION ALL SELECT 'CodeRabbit', 'AI code reviews directly in your pull requests.', 'Coding & Dev', 'https://coderabbit.ai', 'paid', 9, 'Active', 'https://coderabbit.ai/favicon.ico'
+  UNION ALL SELECT 'Swimm', 'AI documentation that lives with your code.', 'Coding & Dev', 'https://swimm.io', 'freemium', 8, 'Active', 'https://swimm.io/favicon.ico'
+  UNION ALL SELECT 'SolidCode', 'AI-powered code quality and security scanning.', 'Coding & Dev', 'https://solidcode.ai', 'freemium', 8, 'Testing', 'https://solidcode.ai/favicon.ico'
+  UNION ALL SELECT 'Tabnine', 'AI code completions for any language.', 'Coding & Dev', 'https://tabnine.com', 'freemium', 8, 'Active', 'https://tabnine.com/favicon.ico'
+  UNION ALL SELECT 'Continue', 'Open source copilot that lives in your IDE.', 'Coding & Dev', 'https://continue.dev', 'free', 9, 'Active', 'https://continue.dev/favicon.ico'
+  
+  -- Design & UI
+  UNION ALL SELECT 'Figma AI', 'Design copilot powered by AI inside Figma.', 'Creative/Vibe', 'https://figma.com', 'freemium', 9, 'Active', 'https://figma.com/favicon.ico'
+  UNION ALL SELECT 'Galileo AI', 'Generate UI designs from text descriptions instantly.', 'Creative/Vibe', 'https://www.galileo.ai', 'freemium', 9, 'Active', 'https://www.galileo.ai/favicon.ico'
+  UNION ALL SELECT 'Relume', 'AI website builder with design system.', 'Creative/Vibe', 'https://relume.io', 'freemium', 9, 'Active', 'https://relume.io/favicon.ico'
+  
+  -- Data & Analytics
+  UNION ALL SELECT 'ChatWithData', 'Ask questions about your data with natural language.', 'Writing & Research', 'https://chatwithdataio.com', 'freemium', 8, 'Testing', 'https://chatwithdataio.com/favicon.ico'
+  UNION ALL SELECT 'Mindomo', 'AI-powered mind mapping and concept visualization.', 'Writing & Research', 'https://mindomo.com', 'freemium', 7, 'Active', 'https://mindomo.com/favicon.ico'
+  UNION ALL SELECT 'Synthesia', 'Create AI video presenters from text scripts.', 'Video Generation', 'https://synthesia.io', 'paid', 8, 'Active', 'https://synthesia.io/favicon.ico'
+  UNION ALL SELECT 'D-ID', 'Create personalized videos with digital humans.', 'Video Generation', 'https://www.d-id.com', 'freemium', 8, 'Active', 'https://www.d-id.com/favicon.ico'
+  
+  -- Productivity & Workflow
+  UNION ALL SELECT 'Zapier AI', 'Build AI-powered automations without code.', 'Experimental/Agents', 'https://zapier.com', 'freemium', 8, 'Active', 'https://zapier.com/favicon.ico'
+  UNION ALL SELECT 'Make.com AI', 'Visual automation platform with AI capabilities.', 'Experimental/Agents', 'https://make.com', 'freemium', 8, 'Active', 'https://make.com/favicon.ico'
+  UNION ALL SELECT 'n8n', 'Open-source workflow automation with AI nodes.', 'Experimental/Agents', 'https://n8n.io', 'freemium', 9, 'Active', 'https://n8n.io/favicon.ico'
+  UNION ALL SELECT 'Retool', 'Build internal tools fast with AI assist.', 'Coding & Dev', 'https://retool.com', 'freemium', 8, 'Active', 'https://retool.com/favicon.ico'
+  
+  -- Marketing & Content
+  UNION ALL SELECT 'Brandmark', 'AI logo and branding design generator.', 'Creative/Vibe', 'https://brandmark.io', 'paid', 8, 'Active', 'https://brandmark.io/favicon.ico'
+  UNION ALL SELECT 'MunchEye', 'Viral marketing content analyzer powered by AI.', 'Writing & Research', 'https://muncheye.com', 'freemium', 7, 'Active', 'https://muncheye.com/favicon.ico'
+  UNION ALL SELECT 'Opus Clip', 'Auto-generate viral short clips from long videos.', 'Video Generation', 'https://www.opus.pro', 'freemium', 9, 'Active', 'https://www.opus.pro/favicon.ico'
+  UNION ALL SELECT 'Adobe Firefly', 'Generative AI powered by Adobe inside Creative Suite.', 'Image Generation', 'https://www.adobe.com/firefly', 'freemium', 9, 'Active', 'https://www.adobe.com/favicon.ico'
+  
+  -- Research & Knowledge
+  UNION ALL SELECT 'Elicit', 'AI research assistant for systematic literature review.', 'Writing & Research', 'https://elicit.org', 'freemium', 9, 'Active', 'https://elicit.org/favicon.ico'
+  UNION ALL SELECT 'ResearchRabbit', 'AI-powered academic paper discovery and organization.', 'Writing & Research', 'https://researchrabbitapp.com', 'freemium', 9, 'Active', 'https://researchrabbitapp.com/favicon.ico'
+  UNION ALL SELECT 'Consensus', 'Find evidence-based insights from research papers.', 'Writing & Research', 'https://consensus.app', 'freemium', 8, 'Active', 'https://consensus.app/favicon.ico'
+  UNION ALL SELECT 'Semantic Scholar', 'AI-powered research paper search and discovery.', 'Writing & Research', 'https://semanticscholar.org', 'free', 8, 'Active', 'https://semanticscholar.org/favicon.ico'
+  
+  -- Voice & Conversation
+  UNION ALL SELECT 'Descript', 'AI-powered podcast and video editing with transcription.', 'Audio & Music', 'https://descript.com', 'freemium', 9, 'Active', 'https://descript.com/favicon.ico'
+  UNION ALL SELECT 'Podium', 'Automated podcast guest screening and booking.', 'Audio & Music', 'https://podium.co', 'paid', 7, 'Testing', 'https://podium.co/favicon.ico'
+  UNION ALL SELECT 'AssemblyAI', 'Best-in-class speech-to-text and understanding API.', 'Audio & Music', 'https://assemblyai.com', 'paid', 10, 'Active', 'https://assemblyai.com/favicon.ico'
+  UNION ALL SELECT 'Fireflies.ai', 'AI meeting transcription and note-taking.', 'Audio & Music', 'https://fireflies.ai', 'freemium', 9, 'Active', 'https://fireflies.ai/favicon.ico'
+  UNION ALL SELECT 'Riverside.fm', 'AI-powered podcast and video interview platform.', 'Audio & Music', 'https://riverside.fm', 'paid', 9, 'Active', 'https://riverside.fm/favicon.ico'
+  
+  -- Security & Compliance
+  UNION ALL SELECT 'GitGuardian', 'AI-powered secrets detection in code repositories.', 'Coding & Dev', 'https://www.gitguardian.com', 'freemium', 9, 'Active', 'https://www.gitguardian.com/favicon.ico'
+  UNION ALL SELECT 'Snyk', 'AI vulnerability scanner for open-source dependencies.', 'Coding & Dev', 'https://snyk.io', 'freemium', 9, 'Active', 'https://snyk.io/favicon.ico'
+  
+  -- SEO & Analytics
+  UNION ALL SELECT 'Surfer SEO', 'AI content optimization for SEO.', 'Writing & Research', 'https://surferseo.com', 'paid', 8, 'Active', 'https://surferseo.com/favicon.ico'
+  UNION ALL SELECT 'Clearscope', 'AI-powered content optimization for search.', 'Writing & Research', 'https://www.clearscope.io', 'paid', 8, 'Active', 'https://www.clearscope.io/favicon.ico'
+  UNION ALL SELECT 'MarketMuse', 'AI content strategy and optimization platform.', 'Writing & Research', 'https://www.marketmuse.com', 'paid', 8, 'Active', 'https://www.marketmuse.com/favicon.ico'
 
 ) t
-CROSS JOIN (SELECT id FROM public.profiles) u;
+CROSS JOIN (SELECT id FROM public.profiles) u
+ON CONFLICT (name, user_id) DO UPDATE SET
+  description = EXCLUDED.description,
+  category = EXCLUDED.category,
+  url = EXCLUDED.url,
+  pricing_model = EXCLUDED.pricing_model,
+  rating = EXCLUDED.rating,
+  status = EXCLUDED.status,
+  logo_url = EXCLUDED.logo_url,
+  updated_at = NOW();

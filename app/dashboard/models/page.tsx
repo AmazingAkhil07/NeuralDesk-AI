@@ -196,8 +196,8 @@ export default function ModelsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20">
-                    <Sparkles className="h-6 w-6 text-primary-foreground" />
+                  <div className="p-2 bg-amber-500 rounded-xl shadow-lg shadow-amber-500/20">
+                    <Sparkles className="h-6 w-6 text-white" />
                   </div>
                   <h1 className="text-4xl font-bold tracking-tight">
                     Model Tracker
@@ -216,7 +216,7 @@ export default function ModelsPage() {
                   size="lg"
                 >
                   {isUpdatingModels ? (
-                    <RefreshCw className="h-5 w-5 mr-2 animate-spin text-primary" />
+                    <RefreshCw className="h-5 w-5 mr-2 animate-spin text-amber-500" />
                   ) : (
                     <RefreshCw className="h-5 w-5 mr-2" />
                   )}
@@ -227,7 +227,7 @@ export default function ModelsPage() {
                     setEditingModel(null);
                     setIsFormOpen(true);
                   }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-xl shadow-primary/20 px-8"
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xl shadow-amber-500/20 px-8"
                   size="lg"
                 >
                   <Plus className="h-5 w-5 mr-2" />
@@ -241,15 +241,15 @@ export default function ModelsPage() {
         <div className="container mx-auto px-6 py-8">
           {/* Search & Filter "Tab" Section */}
           <div className="relative mb-12">
-            <div className="absolute -top-6 left-8 px-4 py-1.5 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.2em] rounded-t-xl shadow-lg shadow-primary/20">
+            <div className="absolute -top-6 left-8 px-4 py-1.5 bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-t-xl shadow-lg shadow-amber-500/20">
               Model Discovery & Insight
             </div>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 rounded-3xl bg-neutral-900 border border-white/5 shadow-2xl backdrop-blur-md relative z-10">
               <div className="relative flex-1 group max-w-xl">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/50 transition-colors group-focus-within:text-primary animate-pulse" />
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-500/50 transition-colors group-focus-within:text-amber-500 animate-pulse" />
                 <Input
                   placeholder="IDENTIFY ARCHITECTURE, CAPABILITY, OR LAB..."
-                  className="pl-14 h-11 bg-white/5 border-white/10 rounded-2xl focus-visible:ring-primary/20 focus-visible:ring-offset-0 font-black tracking-widest text-sm placeholder:text-muted-foreground/30 transition-all focus:bg-white/10"
+                  className="pl-14 h-11 bg-white/5 border-white/10 rounded-2xl focus-visible:ring-amber-500/20 focus-visible:ring-offset-0 font-black tracking-widest text-sm placeholder:text-muted-foreground/30 transition-all focus:bg-white/10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -288,7 +288,7 @@ export default function ModelsPage() {
                   variant={showOpenSourceOnly ? 'default' : 'outline'}
                   onClick={() => setShowOpenSourceOnly(!showOpenSourceOnly)}
                   className={`h-11 px-6 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all ${showOpenSourceOnly
-                    ? 'bg-primary text-primary-foreground border-0 shadow-lg shadow-primary/20'
+                    ? 'bg-amber-500 text-white border-0 shadow-lg shadow-amber-500/20'
                     : 'bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-white'
                     }`}
                 >
@@ -305,7 +305,7 @@ export default function ModelsPage() {
               <div className="text-center">
                 <div className="relative w-16 h-16 mx-auto mb-4">
                   <div className="absolute inset-0 rounded-full border-2 border-border/20"></div>
-                  <div className="absolute inset-0 rounded-full border-2 border-t-primary animate-spin"></div>
+                  <div className="absolute inset-0 rounded-full border-2 border-t-amber-500 animate-spin"></div>
                 </div>
                 <p className="text-muted-foreground font-medium tracking-widest uppercase text-[10px]">Processing Benchmarks</p>
               </div>
@@ -315,7 +315,7 @@ export default function ModelsPage() {
               <Sparkles className="h-16 w-16 mx-auto mb-6 text-muted-foreground/30" />
               <h3 className="text-xl font-bold mb-2">No Model Signatures Found</h3>
               <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-8">Our discovery engine returned no results for this specific filter set.</p>
-              <Button onClick={() => { setSearchQuery(''); setSelectedCompany('all'); }} variant="link" className="text-primary hover:text-primary/80">Reset Database Filters</Button>
+              <Button onClick={() => { setSearchQuery(''); setSelectedCompany('all'); }} variant="link" className="text-amber-500 hover:text-amber-600">Reset Database Filters</Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -351,11 +351,11 @@ export default function ModelsPage() {
         {/* Comparison Dock - Floating Bar */}
         {selectedModels.length > 0 && (
           <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-5">
-            <div className="bg-card/90 backdrop-blur-2xl border border-primary/20 rounded-2xl shadow-2xl p-4 flex items-center gap-6 ring-1 ring-white/10">
+            <div className="bg-card/90 backdrop-blur-2xl border border-amber-500/20 rounded-2xl shadow-2xl p-4 flex items-center gap-6 ring-1 ring-white/10">
               <div className="flex -space-x-3 overflow-hidden">
                 {selectedModels.map((m) => (
-                  <div key={m.id} className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center border-2 border-background shadow-lg ring-1 ring-primary/20" title={m.name}>
-                    <Zap className="h-4 w-4 text-primary-foreground fill-current" />
+                  <div key={m.id} className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center border-2 border-background shadow-lg ring-1 ring-amber-500/20" title={m.name}>
+                    <Zap className="h-4 w-4 text-white fill-current" />
                   </div>
                 ))}
               </div>
@@ -378,7 +378,7 @@ export default function ModelsPage() {
                     onClick={() => setIsComparisonOpen(true)}
                     size="sm"
                     variant="default"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-[10px] tracking-[0.2em] shadow-lg shadow-primary/20 px-6 rounded-xl"
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-black text-[10px] tracking-[0.2em] shadow-lg shadow-amber-500/20 px-6 rounded-xl"
                   >
                     COMPARE BENCHMARKS
                   </Button>

@@ -10,9 +10,10 @@ import {
   Brain,
   Wrench,
   Lightbulb,
-  Vault,
+  Bookmark,
   Home,
   LogOut,
+  Skull,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -44,9 +45,14 @@ const navItems = [
     icon: Lightbulb,
   },
   {
-    title: 'AI Vault',
+    title: 'Idea Graveyard',
+    href: '/dashboard/graveyard',
+    icon: Skull,
+  },
+  {
+    title: 'Knowledge Vault',
     href: '/dashboard/vault',
-    icon: Vault,
+    icon: Bookmark,
   },
 ]
 

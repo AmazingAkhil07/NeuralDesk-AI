@@ -147,10 +147,18 @@ export interface Database {
           user_id: string
           name: string
           category: string
-          url: string
+          url: string | null
           description: string | null
           status: string
-          personal_rating: number | null
+          pricing_model: string | null
+          pricing_details: Json | null
+          features: string[] | null
+          pros: string[] | null
+          cons: string[] | null
+          is_favorite: boolean
+          rating: number | null
+          notes: string | null
+          logo_url: string | null
           created_at: string
           updated_at: string
         }
@@ -159,10 +167,18 @@ export interface Database {
           user_id: string
           name: string
           category: string
-          url: string
+          url?: string | null
           description?: string | null
           status?: string
-          personal_rating?: number | null
+          pricing_model?: string | null
+          pricing_details?: Json | null
+          features?: string[] | null
+          pros?: string[] | null
+          cons?: string[] | null
+          is_favorite?: boolean
+          rating?: number | null
+          notes?: string | null
+          logo_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -171,10 +187,18 @@ export interface Database {
           user_id?: string
           name?: string
           category?: string
-          url?: string
+          url?: string | null
           description?: string | null
           status?: string
-          personal_rating?: number | null
+          pricing_model?: string | null
+          pricing_details?: Json | null
+          features?: string[] | null
+          pros?: string[] | null
+          cons?: string[] | null
+          is_favorite?: boolean
+          rating?: number | null
+          notes?: string | null
+          logo_url?: string | null
           created_at?: string
           updated_at?: string
         }
