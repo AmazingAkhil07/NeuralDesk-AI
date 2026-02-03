@@ -77,7 +77,7 @@ const RecommendationCard = ({ recommendation }: { recommendation?: IdeaRecommend
   const Icon = config.icon;
 
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${config.bgGradient} ${recommendation === 'Build' ? 'border-emerald-500/30' : recommendation === 'Iterate' ? 'border-amber-500/30' : 'border-red-500/30'} border p-6 backdrop-blur`}>
+    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${config.bgGradient} ${recommendation === 'Build' ? 'border-emerald-500/30' : recommendation === 'Iterate' ? 'border-amber-500/30' : recommendation === 'Kill' ? 'border-red-500/30' : 'border-slate-500/30'} border p-6 backdrop-blur`}>
       <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full blur-2xl opacity-20" style={{backgroundImage: `linear-gradient(135deg, var(--tw-gradient-stops))`}} />
       
       <div className="relative flex items-start justify-between">
