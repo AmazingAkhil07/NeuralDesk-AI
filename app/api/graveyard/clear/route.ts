@@ -11,17 +11,17 @@ export async function POST(request: Request) {
 
     try {
         // Delete all graveyard entries for this user
-        const { data, error } = await supabase
+        const { data, error } = await (supabase
             .from('idea_graveyard')
             .delete()
-            .eq('user_id', user.id)
+            .eq('user_id', user.id) as any)
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
-        // Count deleted rows (Supabase returns deleted rows by default)
-        const deletedCount = data ? (Array.isArray(data) ? data.length : 1) : 0
+        // Count deleted rows
+        const deletedCount = Array.isArray(data) ? data.length : 0
 
         return NextResponse.json({ 
             message: 'Graveyard cleared successfully',
