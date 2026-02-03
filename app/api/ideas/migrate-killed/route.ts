@@ -3,7 +3,11 @@ import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { Idea } from '@/types/ideas'
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
+const apiKey = process.env.GOOGLE_AI_API_KEY
+if (!apiKey) {
+    throw new Error('Missing GOOGLE_AI_API_KEY environment variable')
+}
+const genAI = new GoogleGenerativeAI(apiKey)
 
 // Analyze why an idea failed and generate insights
 async function analyzeFailedIdea(idea: Idea): Promise<{

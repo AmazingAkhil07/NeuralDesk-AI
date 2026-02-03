@@ -77,7 +77,7 @@ const RecommendationCard = ({ recommendation }: { recommendation?: IdeaRecommend
   const Icon = config.icon;
 
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${config.bgGradient} border border-${recommendation === 'Build' ? 'emerald' : recommendation === 'Iterate' ? 'amber' : 'red'}-500/30 p-6 backdrop-blur`}>
+    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${config.bgGradient} ${recommendation === 'Build' ? 'border-emerald-500/30' : recommendation === 'Iterate' ? 'border-amber-500/30' : 'border-red-500/30'} border p-6 backdrop-blur`}>
       <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full blur-2xl opacity-20" style={{backgroundImage: `linear-gradient(135deg, var(--tw-gradient-stops))`}} />
       
       <div className="relative flex items-start justify-between">
@@ -151,6 +151,15 @@ const AnalysisMetric = ({
 };
 
 export function AIAnalyzerPanel({ idea, isAnalyzing = false, onAnalyze }: AIAnalyzerPanelProps) {
+  const safeScore = typeof idea.score === 'number' ? idea.score : null
+  
+  const getBorderColorClass = (rec?: IdeaRecommendation | null) => {
+    if (rec === 'Build') return 'border-emerald-500/30'
+    if (rec === 'Iterate') return 'border-amber-500/30'
+    if (rec === 'Kill') return 'border-red-500/30'
+    return 'border-slate-500/30'
+  }
+  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -196,11 +205,11 @@ export function AIAnalyzerPanel({ idea, isAnalyzing = false, onAnalyze }: AIAnal
               <div className="text-center">
                 <div className={cn(
                   "text-6xl font-black text-center",
-                  idea.score! >= 8 ? 'text-emerald-400' :
-                  idea.score! >= 5 ? 'text-amber-400' :
+                  safeScore !== null && safeScore >= 8 ? 'text-emerald-400' :
+                  safeScore !== null && safeScore >= 5 ? 'text-amber-400' :
                   'text-red-400'
                 )}>
-                  {idea.score}
+                  {safeScore ?? '-'}
                 </div>
                 <p className="text-sm text-slate-400 font-semibold mt-1">/10</p>
               </div>

@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
 @keyframes bounce-slow {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
@@ -5,8 +8,6 @@
 .animate-bounce-slow {
   animation: bounce-slow 1.8s infinite cubic-bezier(.68,-0.55,.27,1.55);
 }
-@import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -98,7 +99,6 @@
   --primary: #6366f1; /* Premium Indigo */
   --primary-foreground: #ffffff;
   --secondary: #1e293b; /* Slate Secondary */
-  --secondary-foreground: #f5f7fa;
   --secondary-foreground: oklch(0.95 0.01 240);
   --muted: oklch(0.18 0.04 240);
   --muted-foreground: oklch(0.65 0.05 240); /* Metallic Gray */
